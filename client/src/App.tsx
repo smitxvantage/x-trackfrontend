@@ -16,10 +16,12 @@ import EmployeeList from "@/pages/admin/EmployeeList";
 import AttendanceList from "@/pages/admin/AttendanceList";
 import LeaveManagement from "@/pages/admin/LeaveManagement";
 import ReportsManagement from "@/pages/admin/ReportsManagement";
+import HolidayManagement from "@/pages/admin/HolidayManagement";
 import Settings from "@/pages/admin/Settings";
 
 // Employee Pages
 import EmployeeDashboard from "@/pages/employee/EmployeeDashboard";
+import EmployeeCalendar from "@/pages/employee/EmployeeCalendar";
 import MyAttendance from "@/pages/employee/MyAttendance";
 import MyReports from "@/pages/employee/MyReports";
 import MyLeaves from "@/pages/employee/MyLeaves";
@@ -45,6 +47,7 @@ function Router() {
             <Route path="/admin/attendance" component={AttendanceList} />
             <Route path="/admin/leaves" component={LeaveManagement} />
             <Route path="/admin/reports" component={ReportsManagement} />
+            <Route path="/admin/holidays" component={HolidayManagement} />
             <Route path="/admin/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>
@@ -56,6 +59,7 @@ function Router() {
         <EmployeeLayout>
           <Switch>
             <Route path="/employee/dashboard" component={EmployeeDashboard} />
+            <Route path="/employee/calendar" component={EmployeeCalendar} />
             <Route path="/employee/attendance" component={MyAttendance} />
             <Route path="/employee/reports" component={MyReports} />
             <Route path="/employee/leaves" component={MyLeaves} />

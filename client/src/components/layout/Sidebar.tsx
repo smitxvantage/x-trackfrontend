@@ -25,12 +25,14 @@ export function Sidebar({ role }: SidebarProps) {
     { href: '/admin/employees', label: 'Employees', icon: Users },
     { href: '/admin/attendance', label: 'Attendance', icon: Calendar },
     { href: '/admin/reports', label: 'Daily Reports', icon: FileText },
+    { href: '/admin/holidays', label: 'Holidays', icon: Calendar },
     { href: '/admin/leaves', label: 'Leave Management', icon: Briefcase },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   const employeeLinks = [
     { href: '/employee/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/employee/calendar', label: 'Company Calendar', icon: Calendar },
     { href: '/employee/attendance', label: 'My Attendance', icon: Calendar },
     { href: '/employee/reports', label: 'Daily Reports', icon: FileText },
     { href: '/employee/leaves', label: 'Leave Requests', icon: Briefcase },
