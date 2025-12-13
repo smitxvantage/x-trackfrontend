@@ -35,7 +35,7 @@ import {
   deleteHolidayApi
 } from "@/api/holidays.api";
 import { toast } from "@/hooks/use-toast";
-
+import { useCalendarStore } from "@/store/calendarStore";
 export default function HolidayManagement() {
   const [holidays, setHolidays] = useState<any[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -44,11 +44,18 @@ export default function HolidayManagement() {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [type, setType] = useState('Public');
-
+const setStoreHolidays = useCalendarStore((s) => s.setHolidays);
   // Load holidays from backend
   const loadHolidays = async () => {
     try {
       const res = await getHolidaysApi();
+      const formatted =res.data.data.map((h: any) => ({
+      id: String(h.id),
+      title: h.name,
+      date: new Date(h.date),
+      type: type,
+    }));
+     setStoreHolidays(formatted);  
       setHolidays(res.data.data);
     } catch (err) {
       toast({ variant: "destructive", title: "Failed to load holidays" });

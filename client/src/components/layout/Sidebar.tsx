@@ -8,7 +8,8 @@ import {
   Briefcase, 
   Settings, 
   LogOut,
-  UserCircle
+  UserCircle,
+  Wallet
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -27,6 +28,7 @@ export function Sidebar({ role }: SidebarProps) {
     { href: '/admin/reports', label: 'Daily Reports', icon: FileText },
     { href: '/admin/holidays', label: 'Holidays', icon: Calendar },
     { href: '/admin/leaves', label: 'Leave Management', icon: Briefcase },
+     { href: '/admin/salary', label: 'Salary Management', icon:Wallet},
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 

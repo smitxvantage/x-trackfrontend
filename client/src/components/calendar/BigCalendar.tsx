@@ -1,33 +1,65 @@
-import { useState } from 'react';
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  isSameDay, 
-  addMonths, 
+import { useEffect, useState } from "react";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
   subMonths,
-  isWithinInterval
-} from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { useCalendarStore } from '@/store/calendarStore';
-import { cn } from '@/lib/utils';
+  isWithinInterval,
+  endOfDay,
+  startOfDay,
+} from "date-fns";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { LeaveEvent, useCalendarStore } from "@/store/calendarStore";
+import { cn } from "@/lib/utils";
+import { getLeavesApi } from "@/api/leaves.api";
 
 export function BigCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { holidays, leaves } = useCalendarStore();
-
+  const { holidays, leaves, setLeaves } = useCalendarStore();
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
+  const loadApprovedLeaves = async () => {
+    try {
+      const res = await getLeavesApi();
+      const list = res.data.data || [];
+      const approved: LeaveEvent[] = list
+        .filter((l: any) => l.status === "approved")
+        .map((l: any) => ({
+          id: String(l.id),
+          employeeName: l.userName || `User #${l.userId}`,
+          startDate: startOfDay(new Date(l.startDate)),
+          endDate: endOfDay(startOfDay(new Date(l.endDate))),
+          type: l.leaveType,
+          status: "Approved",
+        }));
 
+      setLeaves(approved);
+    } catch (e) {
+      console.log("Calendar load failed", e);
+    }
+  };
+  useEffect(() => {
+    loadApprovedLeaves();
+  }, []);
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -35,8 +67,8 @@ export function BigCalendar() {
   const goToToday = () => setCurrentDate(new Date());
 
   const getEventsForDay = (day: Date) => {
-    const dayHolidays = holidays.filter(h => isSameDay(h.date, day));
-    const dayLeaves = leaves.filter(l => 
+    const dayHolidays = holidays.filter((h) => isSameDay(h.date, day));
+    const dayLeaves = leaves.filter((l) =>
       isWithinInterval(day, { start: l.startDate, end: l.endDate })
     );
     return { dayHolidays, dayLeaves };
@@ -48,16 +80,31 @@ export function BigCalendar() {
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
           <h2 className="text-2xl font-bold text-foreground">
-            {format(currentDate, 'MMMM yyyy')}
+            {format(currentDate, "MMMM yyyy")}
           </h2>
           <div className="flex items-center rounded-md border bg-background shadow-sm">
-            <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={prevMonth}
+              className="h-8 w-8"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={goToToday} className="h-8 border-x rounded-none px-3 font-normal">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={goToToday}
+              className="h-8 border-x rounded-none px-3 font-normal"
+            >
               Today
             </Button>
-            <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={nextMonth}
+              className="h-8 w-8"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -76,8 +123,11 @@ export function BigCalendar() {
 
       {/* Grid Header */}
       <div className="grid grid-cols-7 border-b bg-muted/40">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="py-2 text-center text-sm font-medium text-muted-foreground">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div
+            key={day}
+            className="py-2 text-center text-sm font-medium text-muted-foreground"
+          >
             {day}
           </div>
         ))}
@@ -89,7 +139,7 @@ export function BigCalendar() {
           const { dayHolidays, dayLeaves } = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isToday = isSameDay(day, new Date());
-
+          console.log(dayHolidays, "dayHolidays");
           return (
             <div
               key={day.toString()}
@@ -108,13 +158,13 @@ export function BigCalendar() {
                     isToday && "bg-primary text-primary-foreground"
                   )}
                 >
-                  {format(day, 'd')}
+                  {format(day, "d")}
                 </span>
               </div>
-              
+
               <div className="mt-2 space-y-1">
                 {dayHolidays.map((holiday) => (
-                   <HoverCard key={holiday.id}>
+                  <HoverCard key={holiday.id}>
                     <HoverCardTrigger asChild>
                       <div className="px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 border border-red-200 truncate cursor-pointer font-medium">
                         {holiday.title}
@@ -122,9 +172,15 @@ export function BigCalendar() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-60 p-3">
                       <div className="space-y-1">
-                        <h4 className="text-sm font-semibold">{holiday.title}</h4>
-                        <p className="text-xs text-muted-foreground">{holiday.type}</p>
-                        <p className="text-xs text-muted-foreground">{format(holiday.date, 'PPPP')}</p>
+                        <h4 className="text-sm font-semibold">
+                          {holiday.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {holiday.type}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(holiday.date, "PPPP")}
+                        </p>
                       </div>
                     </HoverCardContent>
                   </HoverCard>
@@ -139,10 +195,15 @@ export function BigCalendar() {
                     </HoverCardTrigger>
                     <HoverCardContent className="w-60 p-3">
                       <div className="space-y-1">
-                        <h4 className="text-sm font-semibold">{leave.employeeName}</h4>
-                        <Badge variant="outline" className="text-[10px] h-5">{leave.type}</Badge>
-                         <p className="text-xs text-muted-foreground mt-1">
-                          {format(leave.startDate, 'MMM d')} - {format(leave.endDate, 'MMM d')}
+                        <h4 className="text-sm font-semibold">
+                          {leave.employeeName}
+                        </h4>
+                        <Badge variant="outline" className="text-[10px] h-5">
+                          {leave.type}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(leave.startDate, "MMM d")} -{" "}
+                          {format(leave.endDate, "MMM d")}
                         </p>
                       </div>
                     </HoverCardContent>

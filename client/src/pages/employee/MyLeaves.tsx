@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -10,7 +16,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import {
   Dialog,
@@ -18,14 +24,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { CalendarDays, Plus } from "lucide-react";
 
 import {
   getMyLeavesApi,
   applyLeaveApi,
-  cancelLeaveApi
+  cancelLeaveApi,
 } from "@/api/leaves.api";
 import { toast } from "@/hooks/use-toast";
 
@@ -39,7 +45,9 @@ export default function MyLeaves() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [reason, setReason] = useState("");
-
+  const [dayType, setDayType] = useState("full");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   // Load leaves
   const loadLeaves = async () => {
     try {
@@ -63,10 +71,15 @@ export default function MyLeaves() {
         startDate: fromDate,
         endDate: toDate,
         totalDays:
-          (new Date(toDate).getTime() - new Date(fromDate).getTime()) /
-            (1000 * 60 * 60 * 24) +
-          1,
-        reason
+         dayType === "half"
+    ? 0.5
+    : (new Date(toDate).getTime() - new Date(fromDate).getTime()) /
+        (1000 * 60 * 60 * 24) +
+      1,
+        reason,
+        dayType,
+        startTime,
+        endTime
       });
 
       toast({ title: "Leave submitted successfully" });
@@ -78,6 +91,9 @@ export default function MyLeaves() {
       setFromDate("");
       setToDate("");
       setReason("");
+      setDayType("");
+      setStartTime("");
+      setEndTime("");
     } catch (err) {
       toast({ title: "Failed to submit leave", variant: "destructive" });
     }
@@ -104,7 +120,9 @@ export default function MyLeaves() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">My Leaves</h2>
-          <p className="text-muted-foreground mt-1">Manage your leave requests and view balance.</p>
+          <p className="text-muted-foreground mt-1">
+            Manage your leave requests and view balance.
+          </p>
         </div>
 
         {/* ADD LEAVE DIALOG */}
@@ -141,14 +159,54 @@ export default function MyLeaves() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>From Date</Label>
-                  <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                  <Input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>To Date</Label>
-                  <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                  <Input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Day Type</Label>
+                <Select value={dayType} onValueChange={setDayType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Leave Duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full Day</SelectItem>
+                    <SelectItem value="half">Half Day</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            {dayType === "half" && (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label>Start Time</Label>
+        <Input
+          type="time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+        />
+      </div>
 
+      <div className="space-y-2">
+        <Label>End Time</Label>
+        <Input
+          type="time"
+          value={endTime}
+          onChange={(e) => setEndTime(e.target.value)}
+        />
+      </div>
+    </div>
+  )}
               {/* Reason */}
               <div className="space-y-2">
                 <Label>Reason</Label>
@@ -192,7 +250,9 @@ export default function MyLeaves() {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold capitalize">{leave.leaveType}</h4>
+                      <h4 className="font-semibold capitalize">
+                        {leave.leaveType}
+                      </h4>
 
                       <Badge
                         variant="outline"
