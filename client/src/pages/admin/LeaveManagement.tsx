@@ -11,16 +11,50 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X } from "lucide-react";
-import { getLeavesApi, updateLeaveStatusApi } from "@/api/leaves.api";
+import {
+  getLeaveHistory,
+  getLeavesApi,
+  updateLeaveStatusApi,
+} from "@/api/leaves.api";
 import { toast } from "@/hooks/use-toast";
-
+import { LeaveEvent, useCalendarStore } from "@/store/calendarStore";
+import { endOfDay, startOfDay } from "date-fns";
+import EmployeeLeaveOverview from "./EmployeeLeaveOverview";
 export default function LeaveManagement() {
   const [leaves, setLeaves] = useState<any[]>([]);
+  const setStoreLeaves = useCalendarStore((s) => s.setLeaves);
+  // const loadLeaves = async () => {
+  //   try {
+  //     const res = await getLeavesApi();
+  //     setLeaves(res.data.data || []);
+  //   } catch {
+  //     toast({ variant: "destructive", title: "Failed to load leave requests" });
+  //   }
+  // };
 
+  const normalizeDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return startOfDay(d);
+  };
   const loadLeaves = async () => {
     try {
       const res = await getLeavesApi();
-      setLeaves(res.data.data || []);
+      const list = res.data.data || [];
+
+      setLeaves(list);
+
+      const approvedEvents: LeaveEvent[] = list
+        .filter((l: any) => l.status === "approved")
+        .map((l: any) => ({
+          id: String(l.id),
+          employeeName: l.userName || `User #${l.userId}`,
+          startDate: normalizeDate(l.startDate),
+          endDate: endOfDay(normalizeDate(l.endDate)),
+          type: l.leaveType,
+          status: "Approved",
+        }));
+
+      setStoreLeaves(approvedEvents);
     } catch {
       toast({ variant: "destructive", title: "Failed to load leave requests" });
     }
@@ -91,8 +125,7 @@ export default function LeaveManagement() {
                 {pending.map((request: any) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">
-                    request.userName || `User #${request.userId}`
-
+                      {request.userName || `User #${request.userId}`}
                     </TableCell>
 
                     <TableCell>
@@ -100,18 +133,34 @@ export default function LeaveManagement() {
                     </TableCell>
 
                     <TableCell>
-                      {formatDate(request.startDate)} – {formatDate(request.endDate)}
-                      <div className="text-xs text-muted-foreground">
-                        {request.totalDays} days
+                      {formatDate(request.startDate)} –{" "}
+                      {formatDate(request.endDate)}
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        {request.dayType === "half" ? (
+                          <>
+                            <div className="font-medium text-orange-600">Half Day</div>
+                            <div>
+                              {request.startTime} – {request.endTime}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="font-medium text-green-600">Full Day</div>
+                        )}
                       </div>
+
                     </TableCell>
 
-                    <TableCell className="max-w-[200px] truncate" title={request.reason}>
+                    <TableCell
+                      className="max-w-[200px] truncate"
+                      title={request.reason}
+                    >
                       {request.reason}
                     </TableCell>
 
                     <TableCell>
-                      <Badge className="bg-yellow-500 text-white">Pending</Badge>
+                      <Badge className="bg-yellow-500 text-white">
+                        Pending
+                      </Badge>
                     </TableCell>
 
                     <TableCell className="text-right">
@@ -120,7 +169,9 @@ export default function LeaveManagement() {
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
-                          onClick={() => handleUpdateStatus(request.id, "rejected")}
+                          onClick={() =>
+                            handleUpdateStatus(request.id, "rejected")
+                          }
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -129,7 +180,9 @@ export default function LeaveManagement() {
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
-                          onClick={() => handleUpdateStatus(request.id, "approved")}
+                          onClick={() =>
+                            handleUpdateStatus(request.id, "approved")
+                          }
                         >
                           <Check className="h-4 w-4" />
                         </Button>
@@ -151,6 +204,7 @@ export default function LeaveManagement() {
               </TableBody>
             </Table>
           </div>
+     <EmployeeLeaveOverview />
         </TabsContent>
 
         {/* ---------------------- */}
@@ -172,14 +226,14 @@ export default function LeaveManagement() {
                 {history.map((request: any) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">
-  {request.userName || `User #${request.userId}`}
-</TableCell>
-
+                      {request.userName || `User #${request.userId}`}
+                    </TableCell>
 
                     <TableCell>{request.leaveType}</TableCell>
 
                     <TableCell>
-                      {formatDate(request.startDate)} – {formatDate(request.endDate)}
+                      {formatDate(request.startDate)} –{" "}
+                      {formatDate(request.endDate)}
                     </TableCell>
 
                     <TableCell>

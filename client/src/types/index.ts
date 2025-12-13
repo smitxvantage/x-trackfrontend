@@ -8,6 +8,7 @@ export interface User {
   avatar?: string;
   department?: string;
   position?: string;
+  username?: string;
 }
 
 export interface AuthState {

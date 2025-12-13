@@ -5,7 +5,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
 } from "@/components/ui/popover";
 
 import { format } from "date-fns";
@@ -59,7 +59,7 @@ export default function AttendanceList() {
       return employeeName && matchesDate;
     });
   }, [data, search, date]);
-
+  console.log(filteredData, " filteredData");
   return (
     <div className="space-y-6">
       {/* PAGE HEADER */}
@@ -148,8 +148,8 @@ export default function AttendanceList() {
 
                   <TableCell>{record.date}</TableCell>
 
-                  <TableCell>{record.checkIn || "-"}</TableCell>
-                  <TableCell>{record.checkOut || "-"}</TableCell>
+                  <TableCell>{record.firstCheckIn || "-"}</TableCell>
+                  <TableCell>{record.lastCheckOut || "-"}</TableCell>
 
                   <TableCell>
                     {formatHours(Number(record.totalHours))}

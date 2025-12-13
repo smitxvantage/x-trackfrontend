@@ -22,6 +22,8 @@ interface CalendarState {
   holidays: Holiday[];
   leaves: LeaveEvent[];
   addHoliday: (holiday: Holiday) => void;
+  setHolidays: (holidays: Holiday[]) => void;
+  setLeaves: (leaves: LeaveEvent[]) => void;
   removeHoliday: (id: string) => void;
   updateHoliday: (id: string, holiday: Partial<Holiday>) => void;
 }
@@ -42,6 +44,8 @@ const initialLeaves: LeaveEvent[] = [
 export const useCalendarStore = create<CalendarState>((set) => ({
   holidays: initialHolidays,
   leaves: initialLeaves,
+  setHolidays: (holidays) => set({ holidays }),
+  setLeaves: (leaves) => set({ leaves }),
   addHoliday: (holiday) => set((state) => ({ holidays: [...state.holidays, holiday] })),
   removeHoliday: (id) => set((state) => ({ holidays: state.holidays.filter((h) => h.id !== id) })),
   updateHoliday: (id, updated) => set((state) => ({

@@ -26,6 +26,7 @@ import MyAttendance from "@/pages/employee/MyAttendance";
 import MyReports from "@/pages/employee/MyReports";
 import MyLeaves from "@/pages/employee/MyLeaves";
 import Profile from "@/pages/employee/Profile";
+import SalaryManagement from "./pages/admin/SalaryManagement";
 
 function Router() {
   return (
@@ -49,6 +50,7 @@ function Router() {
             <Route path="/admin/reports" component={ReportsManagement} />
             <Route path="/admin/holidays" component={HolidayManagement} />
             <Route path="/admin/settings" component={Settings} />
+             <Route path="/admin/salary" component={SalaryManagement} />
             <Route component={NotFound} />
           </Switch>
         </AdminLayout>
