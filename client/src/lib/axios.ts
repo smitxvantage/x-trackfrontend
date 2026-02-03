@@ -4,7 +4,7 @@ import axios from "axios";
 const baseURL =
   window.location.hostname === "localhost"
     ? "http://localhost:4000"
-    : "https://xtrack.xvantageinfotech.com/api";
+    : "https://xtrack.xvantageinfotech.com";
 
 export const api = axios.create({
   baseURL,
