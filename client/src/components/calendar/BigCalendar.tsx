@@ -44,18 +44,13 @@ export function BigCalendar() {
       const approved: LeaveEvent[] = list
         .filter((l: any) => l.status === "approved")
         .map((l: any) => ({
-  id: String(l.id),
-  employeeName: l.userName || `User #${l.userId}`,
-  startDate: startOfDay(new Date(l.startDate)),
-  endDate: endOfDay(startOfDay(new Date(l.endDate))),
-  type: l.leaveType,
-  status: "Approved",
-
-  // 🔥 NEW FIELDS
-  reason: l.reason || "—",
-  dayType: l.dayType || "full", // "half" | "full"
-}));
-
+          id: String(l.id),
+          employeeName: l.userName || `User #${l.userId}`,
+          startDate: startOfDay(new Date(l.startDate)),
+          endDate: endOfDay(startOfDay(new Date(l.endDate))),
+          type: l.leaveType,
+          status: "Approved",
+        }));
 
       setLeaves(approved);
     } catch (e) {
@@ -175,38 +170,19 @@ export function BigCalendar() {
                         {holiday.title}
                       </div>
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-64 p-3">
-  <div className="space-y-2">
-    <h4 className="text-sm font-semibold">
-      {leave.employeeName}
-    </h4>
-
-    <div className="flex gap-2 flex-wrap">
-      <Badge variant="outline" className="text-[10px] h-5">
-        {leave.type}
-      </Badge>
-
-      <Badge
-        variant="secondary"
-        className="text-[10px] h-5"
-      >
-        {leave.dayType === "half" ? "Half Day" : "Full Day"}
-      </Badge>
-    </div>
-
-    {leave.reason && (
-      <p className="text-xs text-muted-foreground italic">
-        Reason: {leave.reason}
-      </p>
-    )}
-
-    <p className="text-xs text-muted-foreground">
-      {format(leave.startDate, "MMM d")} –{" "}
-      {format(leave.endDate, "MMM d")}
-    </p>
-  </div>
-</HoverCardContent>
-
+                    <HoverCardContent className="w-60 p-3">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-semibold">
+                          {holiday.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {holiday.type}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(holiday.date, "PPPP")}
+                        </p>
+                      </div>
+                    </HoverCardContent>
                   </HoverCard>
                 ))}
 
@@ -217,38 +193,20 @@ export function BigCalendar() {
                         {leave.employeeName}
                       </div>
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-64 p-3">
-  <div className="space-y-2">
-    <h4 className="text-sm font-semibold">
-      {leave.employeeName}
-    </h4>
-
-    <div className="flex gap-2 flex-wrap">
-      <Badge variant="outline" className="text-[10px] h-5">
-        {leave.type}
-      </Badge>
-
-      <Badge
-        variant="secondary"
-        className="text-[10px] h-5"
-      >
-        {leave.dayType === "half" ? "Half Day" : "Full Day"}
-      </Badge>
-    </div>
-
-    {leave.reason && (
-      <p className="text-xs text-muted-foreground italic">
-        Reason: {leave.reason}
-      </p>
-    )}
-
-    <p className="text-xs text-muted-foreground">
-      {format(leave.startDate, "MMM d")} –{" "}
-      {format(leave.endDate, "MMM d")}
-    </p>
-  </div>
-</HoverCardContent>
-
+                    <HoverCardContent className="w-60 p-3">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-semibold">
+                          {leave.employeeName}
+                        </h4>
+                        <Badge variant="outline" className="text-[10px] h-5">
+                          {leave.type}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(leave.startDate, "MMM d")} -{" "}
+                          {format(leave.endDate, "MMM d")}
+                        </p>
+                      </div>
+                    </HoverCardContent>
                   </HoverCard>
                 ))}
               </div>
