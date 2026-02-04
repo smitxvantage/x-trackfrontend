@@ -20,11 +20,23 @@ import {
 } from "@/api/dailyReports.api";
 import { useToast } from "@/hooks/use-toast";
 
+const ADMIN_OPTIONS = [
+  "Vipul Sir",
+  "Mj Sir",
+  "Rahul Sir",
+  "Smit Sir",
+];
+
+
 export default function ReportsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [selectedAdmin, setSelectedAdmin] = useState<Record<number, string>>({});
+  const [selectedUser, setSelectedUser] = useState<number | "">("");
+
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["daily-reports"],
@@ -32,31 +44,47 @@ export default function ReportsManagement() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: number) => approveDailyReportApi(id),
+    mutationFn: ({ id, admin }: { id: number; admin: string }) =>
+      approveDailyReportApi(id, admin),
     onSuccess: () => {
       toast({ title: "Report approved" });
-      queryClient.invalidateQueries(["daily-reports"]);
+      queryClient.invalidateQueries({
+        queryKey: ["daily-reports"],
+      });
     },
   });
+
+
   const formatMinutesToHM = (minutes: number) => {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}h ${m}m`;
-};
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${m}m`;
+  };
 
   const rejectMutation = useMutation({
     mutationFn: (id: number) => rejectDailyReportApi(id),
     onSuccess: () => {
       toast({ title: "Report rejected" });
-      queryClient.invalidateQueries(["daily-reports"]);
+      queryClient.invalidateQueries({
+        queryKey: ["daily-reports"],
+      });
     },
   });
 
-  const reports = data || [];
+
+  const reports = (data || []).slice().sort((a: any, b: any) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+
   const filteredReports = reports.filter((r: any) => {
-  const tasks = r.tasks || "";
-  return tasks.toLowerCase().includes(search.toLowerCase());
-});
+    const matchesSearch =
+      (r.tasks || "").toLowerCase().includes(search.toLowerCase());
+
+    const matchesUser =
+      selectedUser === "" || r.userId === selectedUser;
+
+    return matchesSearch && matchesUser;
+  });
 
 
   return (
@@ -71,6 +99,32 @@ export default function ReportsManagement() {
       </div>
 
       <div className="flex items-center gap-4 bg-card p-4 rounded-lg border">
+        <select
+          value={selectedUser}
+          onChange={(e) =>
+            setSelectedUser(e.target.value ? Number(e.target.value) : "")
+          }
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm
+                     focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="">All Users</option>
+
+          {Array.from(
+            new Map(
+              reports.map((r: any) => [
+                r.userId,
+                r.userName || `User #${r.userId}`,
+              ])
+            ).entries()
+          ).map(([userId, displayName]) => (
+            <option key={userId as number} value={userId as number}>
+              {displayName as string}
+            </option>
+          ))}
+        </select>
+
+
+
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -95,6 +149,7 @@ export default function ReportsManagement() {
                 <TableHead>Date</TableHead>
                 <TableHead className="w-[400px]">Tasks</TableHead>
                 <TableHead>Hours</TableHead>
+                <TableHead>Admin</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -108,8 +163,9 @@ export default function ReportsManagement() {
                 return (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">
-                      User #{report.userId}
+                      {report.userName || `User #${report.userId}`}
                     </TableCell>
+
 
                     <TableCell>{date}</TableCell>
 
@@ -117,8 +173,44 @@ export default function ReportsManagement() {
                       {report.tasks}
                     </TableCell>
 
-                    <TableCell>{formatMinutesToHM(report.hoursWorked)}</TableCell>
+                    <TableCell>
+                      {formatMinutesToHM(report.hoursSpent || 0)}
+                    </TableCell>
 
+
+                    <TableCell>
+                      {status === "approved" ? (
+                        <span className="text-sm text-muted-foreground">
+                          {report.admin || "-"}
+                        </span>
+                      ) : (
+                        <select
+                          value={selectedAdmin[report.id] || ""}
+                          onChange={(e) =>
+                            setSelectedAdmin((prev) => ({
+                              ...prev,
+                              [report.id]: e.target.value,
+                            }))
+                          }
+                          className="
+                           h-9 w-full min-w-[140px]
+                           rounded-md border border-input
+                           bg-background px-3 text-sm
+                           text-foreground shadow-sm
+                           focus:outline-none focus:ring-1 focus:ring-ring
+                           disabled:cursor-not-allowed disabled:opacity-50
+                         "
+                        >
+
+                          <option value="">Select admin</option>
+                          {ADMIN_OPTIONS.map((name) => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </TableCell>
 
                     <TableCell>
                       <Badge
@@ -127,8 +219,8 @@ export default function ReportsManagement() {
                           status === "approved"
                             ? "bg-green-50 text-green-700 border-green-200"
                             : status === "rejected"
-                            ? "bg-red-50 text-red-700 border-red-200"
-                            : "bg-blue-50 text-blue-700 border-blue-200"
+                              ? "bg-red-50 text-red-700 border-red-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
                         }
                       >
                         {status}
@@ -143,7 +235,22 @@ export default function ReportsManagement() {
                       {status !== "approved" && (
                         <Button
                           size="sm"
-                          onClick={() => approveMutation.mutate(report.id)}
+                          onClick={() => {
+                            const admin = selectedAdmin[report.id];
+                            if (!admin) {
+                              toast({
+                                title: "Please select admin before approving",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+
+                            approveMutation.mutate({
+                              id: report.id,
+                              admin,
+                            });
+                          }}
+
                         >
                           Approve
                         </Button>
