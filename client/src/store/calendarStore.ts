@@ -15,8 +15,13 @@ export interface LeaveEvent {
   startDate: Date;
   endDate: Date;
   type: string;
-  status: 'Approved' | 'Pending';
+  status: string;
+
+  // 🔥 NEW
+  reason?: string;
+  dayType?: "half" | "full";
 }
+
 
 interface CalendarState {
   holidays: Holiday[];

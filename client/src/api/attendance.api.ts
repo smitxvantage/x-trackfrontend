@@ -1,5 +1,8 @@
 import { api } from "@/lib/axios";
 
+// --------------------
+// USER ATTENDANCE
+// --------------------
 export const getMyAttendanceApi = () =>
   api.get("/api/attendance/me");
 
@@ -12,6 +15,14 @@ export const checkInApi = () =>
 export const checkOutApi = () =>
   api.post("/api/attendance/check-out");
 
-// ✅ Missing API — now added
+// --------------------
+// WEEKLY HOURS
+// --------------------
+export const getWeeklyHoursApi = () =>
+  api.get("/api/attendance/weekly-hours");
+
+// --------------------
+// ADMIN
+// --------------------
 export const getAllAttendanceApi = () =>
   api.get("/api/attendance");

@@ -18,6 +18,16 @@ export default function MyAttendance() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [records, setRecords] = useState<any[]>([]);
   const [summary, setSummary] = useState({ present: 0, late: 0, absent: 0 });
+  const groupedByDate = records.reduce((acc: any, r: any) => {
+    const date = r.date.split("T")[0];
+
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+
+    acc[date].push(r);
+    return acc;
+  }, {});
 
   useEffect(() => {
     loadData();
@@ -105,35 +115,85 @@ export default function MyAttendance() {
                 </TableHeader>
 
                 <TableBody>
-                  {records.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                        No attendance records found
-                      </TableCell>
-                    </TableRow>
-                  )}
+  {Object.keys(groupedByDate).length === 0 && (
+    <TableRow>
+      <TableCell
+        colSpan={5}
+        className="text-center py-6 text-muted-foreground"
+      >
+        No attendance records found
+      </TableCell>
+    </TableRow>
+  )}
 
-                  {records.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell>{r.date}</TableCell>
-                      <TableCell>{r.checkIn ?? "-"}</TableCell>
-                      <TableCell>{r.checkOut ?? "-"}</TableCell>
-                      <TableCell>{r.totalHours ?? "-"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            r.status === "on-time"
-                              ? "bg-green-50 text-green-700 border-green-200"
-                              : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                          }
-                        >
-                          {r.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+  {Object.entries(groupedByDate).map(([date, dayRecords]: any) => {
+    const totalHours = dayRecords.reduce(
+      (sum: number, r: any) => sum + Number(r.totalHours || 0),
+      0
+    );
+
+    return (
+      <TableRow key={date} className="align-top">
+        {/* DATE */}
+        <TableCell className="font-medium">
+          {date}
+          <div className="text-xs text-muted-foreground mt-1">
+            {dayRecords.length} session(s)
+          </div>
+        </TableCell>
+
+        {/* CHECK IN */}
+        <TableCell>
+          <div className="space-y-1">
+            {dayRecords.map((r: any, i: number) => (
+              <div key={i}>{r.checkIn || "-"}</div>
+            ))}
+          </div>
+        </TableCell>
+
+        {/* CHECK OUT */}
+        <TableCell>
+          <div className="space-y-1">
+            {dayRecords.map((r: any, i: number) => (
+              <div key={i}>{r.checkOut || "-"}</div>
+            ))}
+          </div>
+        </TableCell>
+
+        {/* TOTAL HOURS */}
+        <TableCell>
+          <div className="space-y-1">
+            {dayRecords.map((r: any, i: number) => (
+              <div key={i}>
+                {r.totalHours ? `${r.totalHours}h` : "-"}
+              </div>
+            ))}
+            <div className="mt-2 text-sm font-semibold">
+              Total: {totalHours.toFixed(2)}h
+            </div>
+          </div>
+        </TableCell>
+
+        {/* STATUS */}
+        <TableCell>
+          <Badge
+            variant="outline"
+            className={
+              dayRecords.some((r: any) => r.status === "late")
+                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                : "bg-green-50 text-green-700 border-green-200"
+            }
+          >
+            {dayRecords.some((r: any) => r.status === "late")
+              ? "Late"
+              : "On Time"}
+          </Badge>
+        </TableCell>
+      </TableRow>
+    );
+  })}
+</TableBody>
+
 
               </Table>
             </CardContent>

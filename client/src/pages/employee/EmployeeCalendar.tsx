@@ -10,34 +10,44 @@ export default function EmployeeCalendar() {
     loadCalendarData();
   }, []);
 
-  const loadCalendarData = async () => {
-    const [holidaysRes, leavesRes] = await Promise.all([
-      getHolidaysApi(),
-      getAllLeavesApi()
-    ]);
+const loadCalendarData = async () => {
+  const [holidaysRes, leavesRes] = await Promise.all([
+    getHolidaysApi(),
+    getAllLeavesApi()
+  ]);
 
-    const holidays = holidaysRes.data.data.map((h: any) => ({
-      title: h.name,
-      start: h.date,
-      allDay: true,
-      color: "#3b82f6" // blue
-    }));
+  const holidays = holidaysRes.data.data.map((h: any) => ({
+    title: h.name,
+    start: h.date,
+    allDay: true,
+    type: "holiday",
+    color: "#3b82f6"
+  }));
 
-    const leaves = leavesRes.data.data.map((l: any) => ({
-      title: `${l.userName} - ${l.leaveType}`,
-      start: l.startDate,
-      end: l.endDate,
-      allDay: true,
-      color:
-        l.status === "approved"
-          ? "#22c55e" // green
-          : l.status === "pending"
-          ? "#eab308" // yellow
-          : "#ef4444" // red
-    }));
+  const leaves = leavesRes.data.data.map((l: any) => ({
+    title: l.userName,
+    start: l.startDate,
+    end: l.endDate,
+    allDay: true,
 
-    setEvents([...holidays, ...leaves]);
-  };
+    // 👇 EXTRA DATA
+    leaveType: l.leaveType,
+    reason: l.reason || "—",
+    dayType: l.dayType || "full", // full | half
+    status: l.status,
+
+    type: "leave",
+    color:
+      l.status === "approved"
+        ? "#22c55e"
+        : l.status === "pending"
+        ? "#eab308"
+        : "#ef4444"
+  }));
+
+  setEvents([...holidays, ...leaves]);
+};
+
 
   return (
     <div className="space-y-6">
