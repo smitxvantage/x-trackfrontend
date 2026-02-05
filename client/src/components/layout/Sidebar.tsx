@@ -1,15 +1,16 @@
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  FileText, 
-  Briefcase, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  FileText,
+  Briefcase,
+  Settings,
   LogOut,
   UserCircle,
-  Wallet
+  Wallet,
+  BarChart3,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -26,9 +27,15 @@ export function Sidebar({ role }: SidebarProps) {
     { href: '/admin/employees', label: 'Employees', icon: Users },
     { href: '/admin/attendance', label: 'Attendance', icon: Calendar },
     { href: '/admin/reports', label: 'Daily Reports', icon: FileText },
+    {
+      href: "/admin/daily-overview",
+      label: "Daily Overview",
+      icon: FileText
+    },
+
     { href: '/admin/holidays', label: 'Holidays', icon: Calendar },
     { href: '/admin/leaves', label: 'Leave Management', icon: Briefcase },
-     { href: '/admin/salary', label: 'Salary Management', icon:Wallet},
+    { href: '/admin/salary', label: 'Salary Management', icon: Wallet },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
@@ -59,14 +66,14 @@ export function Sidebar({ role }: SidebarProps) {
           {links.map((link) => {
             const Icon = link.icon;
             const isActive = location === link.href;
-            
+
             return (
               <Link key={link.href} href={link.href}>
                 <a
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all hover:text-primary",
-                    isActive 
-                      ? "bg-primary/10 text-primary" 
+                    isActive
+                      ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-accent"
                   )}
                 >
