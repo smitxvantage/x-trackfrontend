@@ -18,6 +18,8 @@ import LeaveManagement from "@/pages/admin/LeaveManagement";
 import ReportsManagement from "@/pages/admin/ReportsManagement";
 import HolidayManagement from "@/pages/admin/HolidayManagement";
 import Settings from "@/pages/admin/Settings";
+import EmployeeDailyOverview from "@/pages/admin/EmployeeDailyOverview";
+
 
 // Employee Pages
 import EmployeeDashboard from "@/pages/employee/EmployeeDashboard";
@@ -33,7 +35,7 @@ function Router() {
     <Switch>
       {/* Public Routes */}
       <Route path="/login" component={Login} />
-      
+
       {/* Root Redirect */}
       <Route path="/">
         <Redirect to="/login" />
@@ -48,9 +50,10 @@ function Router() {
             <Route path="/admin/attendance" component={AttendanceList} />
             <Route path="/admin/leaves" component={LeaveManagement} />
             <Route path="/admin/reports" component={ReportsManagement} />
+            <Route path="/admin/daily-overview" component={EmployeeDailyOverview} />
             <Route path="/admin/holidays" component={HolidayManagement} />
             <Route path="/admin/settings" component={Settings} />
-             <Route path="/admin/salary" component={SalaryManagement} />
+            <Route path="/admin/salary" component={SalaryManagement} />
             <Route component={NotFound} />
           </Switch>
         </AdminLayout>
