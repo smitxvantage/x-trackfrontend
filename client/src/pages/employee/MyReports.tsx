@@ -382,9 +382,28 @@ export default function MyReports() {
               <CardTitle className="text-base font-medium">{date}</CardTitle>
             </CardHeader>
 
-            <CardContent className="text-sm text-muted-foreground">
-              {dayReports.length} reports
+            <CardContent className="space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                {dayReports.length} reports
+              </p>
+
+              <div className="flex gap-4 text-xs">
+                <span className="text-green-600 font-medium">
+                  Approved:{" "}
+                  {
+                    dayReports.filter((r: any) => r.status === "approved").length
+                  }
+                </span>
+
+                <span className="text-yellow-600 font-medium">
+                  Pending:{" "}
+                  {
+                    dayReports.filter((r: any) => r.status === "submitted").length
+                  }
+                </span>
+              </div>
             </CardContent>
+
           </Card>
 
         ))}

@@ -9,3 +9,7 @@ export const getEmployeeDailySummaryApi = (params: {
     params,
   });
 };
+
+export const getAdminDashboardApi = () => {
+  return api.get("/api/admin/dashboard");
+};
