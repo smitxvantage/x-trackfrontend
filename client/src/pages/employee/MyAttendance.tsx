@@ -30,7 +30,8 @@ export default function MyAttendance() {
         getMySummaryApi()
       ]);
 
-      setRecords(attendanceRes.data.data || []);
+      setRecords(attendanceRes.data.data?.records || []);
+
       setSummary(summaryRes.data.data || { present: 0, late: 0, absent: 0 });
     } catch (err) {
       console.error("Attendance load failed:", err);
@@ -139,12 +140,23 @@ export default function MyAttendance() {
                     </TableRow>
                   )}
 
-                  {records.map((r) => (
+                  {[...records].reverse().map((r) => (
+
                     <TableRow key={r.id}>
                       <TableCell>{r.date}</TableCell>
                       <TableCell>{r.checkIn ?? "-"}</TableCell>
                       <TableCell>{r.checkOut ?? "-"}</TableCell>
-                      <TableCell>{r.totalHours ?? "-"}</TableCell>
+                      <TableCell>
+                        {r.totalHours != null
+                          ? (() => {
+                            const totalMinutes = Math.round(Number(r.totalHours) * 60);
+                            const h = Math.floor(totalMinutes / 60);
+                            const m = totalMinutes % 60;
+                            return `${h} hours ${m} minutes`;
+                          })()
+                          : "-"}
+                      </TableCell>
+
                       <TableCell>
                         <Badge
                           variant="outline"
