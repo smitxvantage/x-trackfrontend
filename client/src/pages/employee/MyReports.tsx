@@ -416,7 +416,7 @@ export default function MyReports() {
             <DialogTitle>Reports – {selectedDate}</DialogTitle>
           </DialogHeader>
 
-          <div className="w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto relative">
             <table className="w-full min-w-[600px] border-collapse">
               <thead>
                 <tr className="border-b">

@@ -7,7 +7,9 @@ import {
   checkInApi,
   checkOutApi,
   getMyAttendanceApi,
-  getMySummaryApi
+  getMySummaryApi,
+  pauseApi,
+  resumeApi,
 } from "@/api/attendance.api";
 
 import { getApprovedLeavesApi } from "@/api/leaves.api";
@@ -35,9 +37,19 @@ type RecentActivityItem = {
 
 
 export default function EmployeeDashboard() {
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
-  const [checkInTime, setCheckInTime] = useState<Date | null>(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [activeSession, setActiveSession] = useState<{
+    checkInAt: string;
+    totalPausedSeconds: number;
+    isPaused: boolean;
+  } | null>(null);
+
+
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const hasActiveSession =
+    activeSession !== null &&
+    typeof activeSession.checkInAt === "string";
+
+
 
   const [user, setUser] = useState<any>(null);
   const [todayHours, setTodayHours] = useState("0h 00m");
@@ -51,6 +63,16 @@ export default function EmployeeDashboard() {
   const [workProgress, setWorkProgress] = useState(0);
 
   const navigate = useNavigate();
+
+  const pausedSeconds = activeSession?.totalPausedSeconds ?? 0;
+
+  const pausedMinutes = Math.floor(pausedSeconds / 60);
+  const pausedRemainingSeconds = pausedSeconds % 60;
+
+  const pausedTime = `${pausedMinutes} min ${pausedRemainingSeconds} sec`;
+  const [baseElapsedSeconds, setBaseElapsedSeconds] = useState(0);
+
+
 
 
   const [leaveStats, setLeaveStats] = useState({
@@ -88,34 +110,30 @@ export default function EmployeeDashboard() {
       const today = new Date().toISOString().split("T")[0];
 
       // FIND TODAY'S ATTENDANCE
-      const todayRecord = attendanceRes.data.data.find(
-        (a: any) => a.date.startsWith(today)
-      );
+      const attendanceData = attendanceRes.data.data;
 
-      if (todayRecord) {
-        if (todayRecord.checkIn && !todayRecord.checkOut) {
-          setIsCheckedIn(true);
-          setCheckInTime(new Date(`${today}T${todayRecord.checkIn}:00`));
-        }
+      const session = attendanceData.activeSession;
 
-        if (todayRecord.checkIn && todayRecord.checkOut) {
-          setIsCheckedIn(false);
-          setCheckInTime(null);
+      setActiveSession(session);
 
-          // Calculate hours
-          const start = new Date(`${today}T${todayRecord.checkIn}:00`);
-          const end = new Date(`${today}T${todayRecord.checkOut}:00`);
-          const diffMs = end.getTime() - start.getTime();
-          const diffMinutes = Math.floor(diffMs / 60000);
-          const h = Math.floor(diffMinutes / 60);
-          const m = diffMinutes % 60;
+      if (session && !session.isPaused) {
+        const start = new Date(session.checkInAt).getTime();
+        const now = Date.now();
+        const paused = Number(session.totalPausedSeconds || 0);
 
-          setTodayHours(`${h}h ${m}m`);
-          const progress = Math.min((diffMinutes / 480) * 100, 100);
-          setWorkProgress(progress);
+        const worked =
+          Math.floor((now - start) / 1000) - paused;
 
-        }
+        const safeWorked = Math.max(worked, 0);
+
+        setElapsedSeconds(safeWorked);
+        setBaseElapsedSeconds(safeWorked); // 🔥 critical line
+      } else {
+        setElapsedSeconds(0);
+        setBaseElapsedSeconds(0);
       }
+
+
 
       // Attendance Summary
       setSummary(summaryRes.data.data);
@@ -144,13 +162,43 @@ export default function EmployeeDashboard() {
       // Recent Activity
       const activity: any[] = [];
 
-      if (todayRecord?.checkIn) {
+      if (attendanceData.activeSession) {
         activity.push({ title: "Checked In", time: "Today" });
       }
 
-      if (todayRecord?.checkOut) {
+      // -------- TODAY COMPLETED HOURS --------
+      const records = attendanceData.records || [];
+
+      const todayCompleted = records.find(
+        (r: any) => r.date === today && r.checkIn && r.checkOut
+      );
+
+      if (todayCompleted) {
+        const [sh, sm] = todayCompleted.checkIn.split(":").map(Number);
+        const [eh, em] = todayCompleted.checkOut.split(":").map(Number);
+
+        const start = new Date(0, 0, 0, sh, sm);
+        const end = new Date(0, 0, 0, eh, em);
+
+        const diffMinutes = Math.floor(
+          (end.getTime() - start.getTime()) / 60000
+        );
+
+        const h = Math.floor(diffMinutes / 60);
+        const m = diffMinutes % 60;
+
+        setTodayHours(`${h}h ${m}m`);
+        setWorkProgress(Math.min((diffMinutes / 480) * 100, 100));
+      } else {
+        setTodayHours("0h 00m");
+        setWorkProgress(0);
+      }
+
+
+      if (todayCompleted) {
         activity.push({ title: "Checked Out", time: "Today" });
       }
+
 
       if (pending.length > 0) {
         activity.push({ title: "Daily Report Submitted", time: "Today" });
@@ -173,18 +221,21 @@ export default function EmployeeDashboard() {
 
   // UPDATE TIMER WHEN CHECKED IN
   useEffect(() => {
-    let interval: any;
+    if (!activeSession || activeSession.isPaused) return;
 
-    if (isCheckedIn && checkInTime) {
-      interval = setInterval(() => {
-        const now = new Date().getTime();
-        const diff = Math.floor((now - checkInTime.getTime()) / 1000);
-        setElapsedTime(diff);
-      }, 1000);
-    }
+    const start = Date.now();
+
+    const interval = setInterval(() => {
+      const deltaSeconds = Math.floor((Date.now() - start) / 1000);
+      setElapsedSeconds(baseElapsedSeconds + deltaSeconds);
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [isCheckedIn, checkInTime]);
+  }, [activeSession?.isPaused]);
+
+
+
+
 
   const formatSessionTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -197,27 +248,94 @@ export default function EmployeeDashboard() {
 
   const handleCheckIn = async () => {
     try {
-      await checkInApi();
-      setIsCheckedIn(true);
-      setCheckInTime(new Date());
+      const res = await checkInApi();
+
+      if (!res?.data?.success) {
+        throw new Error("Check-in API failed");
+      }
+
+      const { checkInAt, isPaused, totalPausedSeconds } = res.data.data;
+
+      setActiveSession({
+        checkInAt,
+        isPaused,
+        totalPausedSeconds,
+      });
+
+      setElapsedSeconds(0); // reset UI timer cleanly
+
       toast({ title: "Checked in successfully!" });
-    } catch {
+    } catch (err) {
+      console.error("Check-in error:", err);
       toast({ title: "Check-in failed", variant: "destructive" });
     }
   };
 
+
+
   const handleCheckOut = async () => {
     try {
       await checkOutApi();
-      setIsCheckedIn(false);
-      setCheckInTime(null);
-      setElapsedTime(0);
+
+      setActiveSession(null);
+      setElapsedSeconds(0);
+
       toast({ title: "Checked out successfully!" });
       loadDashboard();
     } catch {
       toast({ title: "Check-out failed", variant: "destructive" });
     }
   };
+
+  const handlePause = async () => {
+    try {
+      await pauseApi();
+
+      setBaseElapsedSeconds(elapsedSeconds); // 🔥 freeze time
+      setActiveSession((s) =>
+        s ? { ...s, isPaused: true } : s
+      );
+
+      toast({ title: "Session paused" });
+    } catch {
+      toast({ title: "Pause failed", variant: "destructive" });
+    }
+  };
+
+
+
+
+  const handleResume = async () => {
+    try {
+      await resumeApi();
+
+      const attendanceRes = await getMyAttendanceApi();
+      const session = attendanceRes.data.data.activeSession;
+
+      if (!session) return;
+
+      setActiveSession(session);
+      setBaseElapsedSeconds(elapsedSeconds); // 🔥 resume from frozen value
+
+      toast({ title: "Session resumed" });
+    } catch {
+      toast({ title: "Resume failed", variant: "destructive" });
+    }
+  };
+
+
+  const getLiveWorkTime = () => {
+    const totalMinutes = Math.floor(elapsedSeconds / 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+
+    return {
+      label: `${h}h ${m.toString().padStart(2, "0")}m`,
+      progress: Math.min((totalMinutes / 480) * 100, 100),
+    };
+  };
+
+
 
   return (
     <div className="space-y-8">
@@ -238,24 +356,44 @@ export default function EmployeeDashboard() {
 
           <div>
             <p className="text-sm opacity-70">Current Session</p>
-            <p className="text-3xl font-mono">{formatSessionTime(elapsedTime)}</p>
-          </div>
+            <p className="text-3xl font-mono">
+              {formatSessionTime(elapsedSeconds)}
+            </p>
 
-          {isCheckedIn ? (
-            <Button
-              onClick={handleCheckOut}
-              className="bg-white text-primary font-semibold"
-            >
-              <Square className="h-4 w-4 mr-2" /> Check Out
-            </Button>
+          </div>
+          {activeSession && activeSession.totalPausedSeconds > 0 && (
+            <p className="text-xs opacity-70 mt-1">
+              Paused: {pausedTime}
+            </p>
+          )}
+
+
+          {hasActiveSession ? (
+            <div className="flex gap-3">
+              {activeSession.isPaused ? (
+                <Button onClick={handleResume} className="bg-white text-primary">
+                  ▶ Resume
+                </Button>
+              ) : (
+                <Button onClick={handlePause} className="bg-white text-primary">
+                  ⏸ Pause
+                </Button>
+              )}
+
+              <Button onClick={handleCheckOut} className="bg-white text-primary">
+                ⏹ Check Out
+              </Button>
+            </div>
           ) : (
             <Button
               onClick={handleCheckIn}
               className="bg-white text-primary font-semibold"
             >
-              <Play className="h-4 w-4 mr-2" /> Check In
+              ▶ Check In
             </Button>
           )}
+
+
         </CardContent>
       </Card>
 
@@ -269,8 +407,23 @@ export default function EmployeeDashboard() {
             <CardTitle>Work Hours Today</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{todayHours}</p>
-            <Progress value={workProgress} className="h-2 mt-2" />
+            {hasActiveSession ? (
+              (() => {
+                const live = getLiveWorkTime();
+                return (
+                  <>
+                    <p className="text-2xl font-bold">{live.label}</p>
+                    <Progress value={live.progress} className="h-2 mt-2" />
+                  </>
+                );
+              })()
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{todayHours}</p>
+                <Progress value={workProgress} className="h-2 mt-2" />
+              </>
+            )}
+
             <p className="text-muted-foreground text-xs mt-1">Target: 8h 00m</p>
           </CardContent>
         </Card>

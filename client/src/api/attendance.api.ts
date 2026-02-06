@@ -12,6 +12,13 @@ export const checkInApi = () =>
 export const checkOutApi = () =>
   api.post("/api/attendance/check-out");
 
+export const pauseApi = () =>
+  api.post("/api/attendance/pause");
+
+export const resumeApi = () =>
+  api.post("/api/attendance/resume");
+
+
 // ✅ Missing API — now added
 export const getAllAttendanceApi = () =>
   api.get("/api/attendance");
