@@ -49,39 +49,65 @@ export default function MyAttendance() {
         {/* Calendar + Summary */}
         <div className="md:col-span-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Calendar</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CalendarCheck className="h-4 w-4 text-primary" />
+                Attendance Calendar
+              </CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center">
-              <Calendar selected={date} onSelect={setDate} />
+
+            <CardContent className="p-4">
+              <div className="rounded-xl border bg-gradient-to-br from-background to-muted/40 p-3 shadow-sm">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="w-full"
+                  classNames={{
+                    day_selected:
+                      "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                    day_today:
+                      "border border-primary text-primary",
+                    day_outside:
+                      "text-muted-foreground opacity-40",
+                    nav_button:
+                      "hover:bg-accent hover:text-accent-foreground rounded-md",
+                    caption:
+                      "flex justify-center py-2 relative items-center text-sm font-semibold",
+                  }}
+                />
+              </div>
             </CardContent>
+
           </Card>
 
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Monthly Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              
-              <SummaryRow
-                icon={<CalendarCheck className="h-4 w-4 text-green-500" />}
-                label="Present Days"
+            <CardContent className="grid grid-cols-3 gap-4">
+              <SummaryStat
+                label="Present"
                 value={summary.present}
+                icon={<CalendarCheck className="h-5 w-5 text-green-600" />}
+                bg="bg-green-50"
               />
 
-              <SummaryRow
-                icon={<Clock className="h-4 w-4 text-yellow-500" />}
-                label="Late Arrivals"
+              <SummaryStat
+                label="Late"
                 value={summary.late}
+                icon={<Clock className="h-5 w-5 text-yellow-600" />}
+                bg="bg-yellow-50"
               />
 
-              <SummaryRow
-                icon={<XCircle className="h-4 w-4 text-red-500" />}
-                label="Absences"
+              <SummaryStat
+                label="Absent"
                 value={summary.absent}
+                icon={<XCircle className="h-5 w-5 text-red-600" />}
+                bg="bg-red-50"
               />
-
             </CardContent>
+
           </Card>
         </div>
 
@@ -94,7 +120,7 @@ export default function MyAttendance() {
 
             <CardContent>
               <Table>
-                <TableHeader>
+                <TableHeader className="text-xs uppercase tracking-wide text-muted-foreground">
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Check In</TableHead>
@@ -145,14 +171,14 @@ export default function MyAttendance() {
   );
 }
 
-function SummaryRow({ icon, label, value }: any) {
+function SummaryStat({ icon, label, value, bg }: any) {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+    <div className={`rounded-lg p-3 ${bg} border`}>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         {icon}
-        <span>{label}</span>
+        {label}
       </div>
-      <span className="font-bold">{value}</span>
+      <div className="text-2xl font-bold mt-1">{value}</div>
     </div>
   );
 }

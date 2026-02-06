@@ -20,9 +20,27 @@ import { toast } from "@/hooks/use-toast";
 import { LeaveEvent, useCalendarStore } from "@/store/calendarStore";
 import { endOfDay, startOfDay } from "date-fns";
 import EmployeeLeaveOverview from "./EmployeeLeaveOverview";
+import { Trash2 } from "lucide-react";
+import { deleteLeaveApi } from "@/api/leaves.api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+
+
+
 export default function LeaveManagement() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const setStoreLeaves = useCalendarStore((s) => s.setLeaves);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
   // const loadLeaves = async () => {
   //   try {
   //     const res = await getLeavesApi();
@@ -59,6 +77,25 @@ export default function LeaveManagement() {
       toast({ variant: "destructive", title: "Failed to load leave requests" });
     }
   };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      await deleteLeaveApi(deleteId);
+      toast({ title: "Leave deleted permanently" });
+      setDeleteId(null);
+      await loadLeaves();
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete leave",
+      });
+    }
+  };
+
+
+
 
   useEffect(() => {
     loadLeaves();
@@ -204,7 +241,7 @@ export default function LeaveManagement() {
               </TableBody>
             </Table>
           </div>
-     <EmployeeLeaveOverview />
+          <EmployeeLeaveOverview />
         </TabsContent>
 
         {/* ---------------------- */}
@@ -216,11 +253,14 @@ export default function LeaveManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Employee</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Day Type</TableHead>
+                  <TableHead>Reason</TableHead>
                   <TableHead>Date Range</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
+
 
               <TableBody>
                 {history.map((request: any) => (
@@ -229,12 +269,37 @@ export default function LeaveManagement() {
                       {request.userName || `User #${request.userId}`}
                     </TableCell>
 
-                    <TableCell>{request.leaveType}</TableCell>
-
+                    {/* Day Type */}
                     <TableCell>
-                      {formatDate(request.startDate)} –{" "}
-                      {formatDate(request.endDate)}
+                      <span
+                        className={`text-sm font-medium ${request.dayType === "half"
+                          ? "text-orange-600"
+                          : "text-green-600"
+                          }`}
+                      >
+                        {request.dayType === "half" ? "Half Day" : "Full Day"}
+                      </span>
+
+                      {request.dayType === "half" && (
+                        <div className="text-xs text-muted-foreground">
+                          {request.startTime} – {request.endTime}
+                        </div>
+                      )}
                     </TableCell>
+
+                    {/* Reason */}
+                    <TableCell
+                      className="max-w-[200px] truncate"
+                      title={request.reason}
+                    >
+                      {request.reason || "—"}
+                    </TableCell>
+
+                    {/* Date Range */}
+                    <TableCell>
+                      {formatDate(request.startDate)} – {formatDate(request.endDate)}
+                    </TableCell>
+
 
                     <TableCell>
                       <Badge
@@ -247,13 +312,26 @@ export default function LeaveManagement() {
                         {request.status}
                       </Badge>
                     </TableCell>
+
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                        onClick={() => setDeleteId(request.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+
+                    </TableCell>
                   </TableRow>
+
                 ))}
 
                 {history.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={6}
                       className="text-center text-muted-foreground h-24"
                     >
                       No leave history found.
@@ -265,6 +343,34 @@ export default function LeaveManagement() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete Leave Request?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+              This will permanently delete the leave record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
     </div>
   );
 }

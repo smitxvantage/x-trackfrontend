@@ -50,7 +50,13 @@ export function BigCalendar() {
           endDate: endOfDay(startOfDay(new Date(l.endDate))),
           type: l.leaveType,
           status: "Approved",
+          reason: l.reason,
+          dayType: l.dayType,
+          startTime: l.startTime,
+          endTime: l.endTime,
         }));
+
+
 
       setLeaves(approved);
     } catch (e) {
@@ -193,20 +199,53 @@ export function BigCalendar() {
                         {leave.employeeName}
                       </div>
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-60 p-3">
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-semibold">
+                    <HoverCardContent className="w-80 p-5">
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold">
                           {leave.employeeName}
                         </h4>
-                        <Badge variant="outline" className="text-[10px] h-5">
-                          {leave.type}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(leave.startDate, "MMM d")} -{" "}
-                          {format(leave.endDate, "MMM d")}
-                        </p>
+
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="text-xs h-6">
+                            {leave.type}
+                          </Badge>
+
+                          {leave.dayType && (
+                            <Badge variant="secondary" className="text-xs h-6">
+                              {leave.dayType}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {leave.reason && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            <span className="font-medium text-foreground">Reason:</span>{" "}
+                            {leave.reason}
+                          </p>
+                        )}
+
+                        {/* Show time ONLY for Half Day */}
+                        {leave.dayType === "Half Day" &&
+                          leave.startTime &&
+                          leave.endTime && (
+                            <div className="text-sm">
+                              <span className="font-medium text-foreground">Time:</span>{" "}
+                              <span className="text-muted-foreground">
+                                {leave.startTime} – {leave.endTime}
+                              </span>
+                            </div>
+                          )}
+
+                        <div className="pt-2 border-t">
+                          <p className="text-sm text-muted-foreground">
+                            {format(leave.startDate, "MMM d, yyyy")} –{" "}
+                            {format(leave.endDate, "MMM d, yyyy")}
+                          </p>
+                        </div>
                       </div>
                     </HoverCardContent>
+
+
                   </HoverCard>
                 ))}
               </div>

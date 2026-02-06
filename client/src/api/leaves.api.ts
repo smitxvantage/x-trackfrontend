@@ -16,6 +16,10 @@ export const getLeavesApi = () => {
   return api.get("/api/leaves"); // admin only
 };
 
+export const deleteLeaveApi = (id: number) => {
+  return api.delete(`/api/leaves/${id}`);
+};
+
 export const getLeaveHistory = () => {
   return api.get("/api/leave-history"); // admin only
 };

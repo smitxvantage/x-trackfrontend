@@ -18,6 +18,21 @@ import { getMeApi } from "@/api/auth.api";
 import { Clock, CalendarCheck, FileText, Coffee, Play, Square, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
+
+type Holiday = {
+  id: number;
+  name: string;
+  date: string;
+};
+
+type RecentActivityItem = {
+  title: string;
+  time: string;
+  icon?: string;
+};
+
 
 export default function EmployeeDashboard() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
@@ -28,11 +43,23 @@ export default function EmployeeDashboard() {
   const [todayHours, setTodayHours] = useState("0h 00m");
 
   const [summary, setSummary] = useState({ present: 0, late: 0, absent: 0 });
-  const [holidays, setHolidays] = useState([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [leaves, setLeaves] = useState([]);
   const [pendingReports, setPendingReports] = useState(0);
 
-  const [recentActivity, setRecentActivity] = useState([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
+  const [workProgress, setWorkProgress] = useState(0);
+
+  const navigate = useNavigate();
+
+
+  const [leaveStats, setLeaveStats] = useState({
+    total: 0,
+    casual: 0,
+    sick: 0,
+  });
+
+
 
   useEffect(() => {
     loadDashboard();
@@ -84,6 +111,9 @@ export default function EmployeeDashboard() {
           const m = diffMinutes % 60;
 
           setTodayHours(`${h}h ${m}m`);
+          const progress = Math.min((diffMinutes / 480) * 100, 100);
+          setWorkProgress(progress);
+
         }
       }
 
@@ -93,6 +123,17 @@ export default function EmployeeDashboard() {
       // Leaves
       setLeaves(leavesRes.data.data);
 
+      const casual = leavesRes.data.data.filter(
+        (l: any) => l.leaveType === "casual"
+      ).length;
+
+      const sick = leavesRes.data.data.filter(
+        (l: any) => l.leaveType === "sick"
+      ).length;
+
+      setLeaveStats({ total: casual + sick, casual, sick });
+
+
       // Holidays
       setHolidays(holidaysRes.data.data);
 
@@ -101,41 +142,29 @@ export default function EmployeeDashboard() {
       setPendingReports(pending.length);
 
       // Recent Activity
-      const activity = [];
-
-      if (todayRecord?.checkOut) {
-        activity.push({
-          title: "Checked Out",
-          time: "Today",
-          icon: "logout"
-        });
-      }
+      const activity: any[] = [];
 
       if (todayRecord?.checkIn) {
-        activity.push({
-          title: "Checked In",
-          time: "Today",
-          icon: "login"
-        });
+        activity.push({ title: "Checked In", time: "Today" });
+      }
+
+      if (todayRecord?.checkOut) {
+        activity.push({ title: "Checked Out", time: "Today" });
       }
 
       if (pending.length > 0) {
-        activity.push({
-          title: "Daily Report Submitted",
-          time: "Today",
-          icon: "file"
-        });
+        activity.push({ title: "Daily Report Submitted", time: "Today" });
       }
 
-      if (leavesRes.data.data.length > 0) {
+      leavesRes.data.data.slice(0, 1).forEach((l: any) => {
         activity.push({
           title: "Leave Approved",
-          time: leavesRes.data.data[0].startDate,
-          icon: "check"
+          time: new Date(l.startDate).toLocaleDateString(),
         });
-      }
+      });
 
       setRecentActivity(activity);
+
 
     } catch (err) {
       console.log(err);
@@ -241,7 +270,7 @@ export default function EmployeeDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{todayHours}</p>
-            <Progress value={50} className="h-2 mt-2" />
+            <Progress value={workProgress} className="h-2 mt-2" />
             <p className="text-muted-foreground text-xs mt-1">Target: 8h 00m</p>
           </CardContent>
         </Card>
@@ -252,8 +281,11 @@ export default function EmployeeDashboard() {
             <CardTitle>Leave Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">12 Days</p>
-            <p className="text-muted-foreground text-xs">8 Casual, 4 Sick</p>
+            <p className="text-2xl font-bold">{leaveStats.total} Days</p>
+            <p className="text-muted-foreground text-xs">
+              {leaveStats.casual} Casual, {leaveStats.sick} Sick
+            </p>
+
           </CardContent>
         </Card>
 
@@ -279,9 +311,14 @@ export default function EmployeeDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{pendingReports}</p>
-            <Button variant="link" className="px-0 text-primary text-xs">
+            <Button
+              variant="link"
+              className="px-0 text-primary text-xs"
+              onClick={() => navigate("/employee/reports")}
+            >
               Complete now
             </Button>
+
           </CardContent>
         </Card>
       </div>
@@ -296,8 +333,17 @@ export default function EmployeeDashboard() {
           </CardHeader>
 
           <CardContent>
+            {holidays.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No upcoming holidays
+              </p>
+            )}
+
             {holidays.map((h: any) => (
-              <div key={h.id} className="flex items-center justify-between p-3 border rounded-lg mb-3">
+              <div
+                key={h.id}
+                className="flex items-center justify-between p-3 border rounded-lg mb-3"
+              >
                 <div>
                   <p className="font-semibold">{h.name}</p>
                   <p className="text-sm text-muted-foreground">{h.date}</p>
@@ -308,6 +354,8 @@ export default function EmployeeDashboard() {
               </div>
             ))}
           </CardContent>
+
+
         </Card>
 
         {/* RECENT ACTIVITY */}
@@ -317,16 +365,21 @@ export default function EmployeeDashboard() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {recentActivity.map((a, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.time}</p>
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No recent activity</p>
+            ) : (
+              recentActivity.map((a, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{a.title}</p>
+                    <p className="text-xs text-muted-foreground">{a.time}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
+
         </Card>
 
       </div>
