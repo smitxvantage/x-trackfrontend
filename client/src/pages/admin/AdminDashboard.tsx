@@ -29,34 +29,75 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
-import { getAdminDashboardApi } from "@/api/admin.api";
+import { getAdminDashboardApi, getAdminOnLeaveDetailsApi, getAdminPendingReportsApi, getAdminEmployeesApi } from "@/api/admin.api";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
-const workHoursData = [
-  { name: 'Mon', hours: 140 },
-  { name: 'Tue', hours: 155 },
-  { name: 'Wed', hours: 150 },
-  { name: 'Thu', hours: 160 },
-  { name: 'Fri', hours: 145 },
-  { name: 'Sat', hours: 40 },
-  { name: 'Sun', hours: 10 },
-];
-
-const attendanceData = [
-  { name: 'Week 1', present: 45, absent: 2, late: 3 },
-  { name: 'Week 2', present: 48, absent: 1, late: 1 },
-  { name: 'Week 3', present: 46, absent: 3, late: 1 },
-  { name: 'Week 4', present: 47, absent: 2, late: 1 },
-];
 
 export default function AdminDashboard() {
+  // 🔹 1. ALL STATE HOOKS FIRST
+  const [openOnLeave, setOpenOnLeave] = useState(false);
+  const [openPendingReports, setOpenPendingReports] = useState(false);
+  const [openEmployees, setOpenEmployees] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  // 🔹 2. ALL QUERIES NEXT
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["admin-dashboard"],
-    queryFn: async () => (await getAdminDashboardApi()).data.data,
+    queryFn: async () => {
+      const res = await getAdminDashboardApi();
+      return res.data?.data;
+    },
   });
+
+  const {
+    data: onLeaveDetails,
+    isLoading: isLeaveLoading,
+  } = useQuery({
+    queryKey: ["on-leave-details"],
+    queryFn: async () => {
+      const res = await getAdminOnLeaveDetailsApi();
+      return res.data?.data;
+    },
+    enabled: openOnLeave,
+  });
+
+  const {
+    data: pendingReportsList,
+    isLoading: isPendingReportsLoading,
+  } = useQuery({
+    queryKey: ["pending-reports"],
+    queryFn: async () => {
+      const res = await getAdminPendingReportsApi();
+      return res.data?.data;
+    },
+    enabled: openPendingReports,
+  });
+
+  const {
+    data: employees,
+    isLoading: isEmployeesLoading,
+  } = useQuery({
+    queryKey: ["admin-employees"],
+    queryFn: async () => {
+      const res = await getAdminEmployeesApi();
+      return res.data?.data;
+    },
+    enabled: openEmployees,
+  });
+
+  // 🔹 3. ONLY NOW you can return conditionally
   if (isLoading) {
     return <div className="p-6">Loading dashboard...</div>;
+  }
+
+  if (isError || !data || !data.stats) {
+    return <div className="p-6">Failed to load dashboard</div>;
   }
 
 
@@ -75,14 +116,19 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card
+          onClick={() => setOpenEmployees(true)}
+          className="cursor-pointer hover:shadow-md transition"
+        >
+
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {data.stats.totalEmployees}
+              {data?.stats?.totalEmployees ?? 0}
+
             </div>
 
             <p className="text-xs text-muted-foreground flex items-center mt-1">
@@ -98,7 +144,10 @@ export default function AdminDashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">108</div>
+            <div className="text-2xl font-bold">
+              {data.stats.onTimeToday}
+            </div>
+
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <span className="text-green-500 flex items-center mr-1"><ArrowUpRight className="h-3 w-3" /> 92%</span>
               arrival rate
@@ -106,7 +155,10 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          onClick={() => setOpenOnLeave(true)}
+          className="cursor-pointer hover:shadow-md transition"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">On Leave</CardTitle>
             <CalendarOff className="h-4 w-4 text-muted-foreground" />
@@ -116,6 +168,7 @@ export default function AdminDashboard() {
               {data.stats.onLeaveToday}
             </div>
 
+
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <span className="text-muted-foreground flex items-center mr-1">4 approved</span>
               pending approval
@@ -123,7 +176,11 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          onClick={() => setOpenPendingReports(true)}
+          className="cursor-pointer hover:shadow-md transition"
+        >
+
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -150,7 +207,8 @@ export default function AdminDashboard() {
           <CardContent className="pl-2">
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={workHoursData}>
+                <AreaChart data={data.weeklyWorkHours}>
+
                   <defs>
                     <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#4942E4" stopOpacity={0.3} />
@@ -178,7 +236,8 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceData}>
+                <BarChart data={data.attendanceOverview}>
+
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
@@ -246,6 +305,110 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+      <Dialog open={openOnLeave} onOpenChange={setOpenOnLeave}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Employees On Leave Today</DialogTitle>
+          </DialogHeader>
+
+          {isLeaveLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <div className="space-y-3">
+              {onLeaveDetails?.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-start p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{item.userName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {item.leaveType} • {item.reason || "No reason"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.startDate} → {item.endDate}
+                    </p>
+                  </div>
+
+                  <Badge>{item.status}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openPendingReports} onOpenChange={setOpenPendingReports}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Pending Daily Reports</DialogTitle>
+          </DialogHeader>
+
+          {isPendingReportsLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <div className="space-y-3">
+              {pendingReportsList?.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-start p-3 border rounded-lg"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium">{item.userName}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {item.tasks}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.hoursSpent ? `${item.hoursSpent} min` : "—"} •{" "}
+                      {item.date}
+                    </p>
+                  </div>
+
+                  <Badge variant="outline">Pending</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openEmployees} onOpenChange={setOpenEmployees}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>All Employees</DialogTitle>
+          </DialogHeader>
+
+          {isEmployeesLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <div className="space-y-3">
+              {employees?.map((emp: any) => (
+                <div
+                  key={emp.id}
+                  className="flex justify-between items-center p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{emp.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {emp.email}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Badge variant={emp.isActive ? "default" : "secondary"}>
+                      {emp.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {emp.role}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
