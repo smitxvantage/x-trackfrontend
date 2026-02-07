@@ -19,6 +19,9 @@ export default function EmployeeDailyOverview() {
     const [selectedUserId, setSelectedUserId] = useState<number | "">("");
     const [view, setView] = useState<"day" | "week" | "month">("day");
 
+    const [openSummary, setOpenSummary] = useState(false);
+
+
     const { data = [], isLoading } = useQuery({
         queryKey: ["employee-daily-summary", selectedDate, selectedUserId, view],
         queryFn: async () =>
@@ -30,6 +33,39 @@ export default function EmployeeDailyOverview() {
                 })
             ).data.data,
     });
+
+    const summary = (() => {
+        const source = selectedUserId
+            ? data.filter((d: any) => d.userId === selectedUserId)
+            : data;
+
+        let tracked = 0;
+        let worked = 0;
+
+        source.forEach((emp: any) => {
+            if (emp.checkIn && emp.checkOut) {
+                const [inH, inM] = emp.checkIn.split(":").map(Number);
+                const [outH, outM] = emp.checkOut.split(":").map(Number);
+
+                tracked += Math.max(
+                    outH * 60 + outM - (inH * 60 + inM),
+                    0
+                );
+            }
+
+            worked +=
+                emp.tasks
+                    ?.filter((t: any) => t.status === "approved")
+                    .reduce((s: number, t: any) => s + (t.minutes || 0), 0) || 0;
+        });
+
+        return {
+            tracked,
+            worked,
+            difference: tracked - worked,
+            hasData: tracked > 0,
+        };
+    })();
 
 
 
@@ -91,6 +127,69 @@ export default function EmployeeDailyOverview() {
             </div>
 
 
+            {/* ===== TIME SUMMARY (AFTER CHECKOUT) ===== */}
+            {summary.hasData && (
+                <div
+                    onClick={() => setOpenSummary(true)}
+                    className="rounded-lg border bg-card p-5 space-y-4 cursor-pointer hover:shadow-md transition"
+                >
+
+                    <h3 className="text-lg font-semibold">
+                        Time Summary (After Checkout)
+                    </h3>
+
+                    <div className="grid grid-cols-3 gap-6">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Tracked Time</p>
+                            <p className="text-2xl font-bold">
+                                {Math.floor(summary.tracked / 60)}:
+                                {String(summary.tracked % 60).padStart(2, "0")}
+                            </p>
+
+                        </div>
+
+                        <div>
+                            <p className="text-sm text-muted-foreground">Task Time</p>
+                            <p className="text-2xl font-bold">
+                                {Math.floor(summary.worked / 60)}:
+                                {String(summary.worked % 60).padStart(2, "0")}
+                            </p>
+
+                        </div>
+
+                        <div>
+                            <p className="text-sm text-muted-foreground">Difference</p>
+                            <p
+                                className={`text-2xl font-bold ${summary.difference >= 0 ? "text-red-600" : "text-green-600"
+                                    }`}
+                            >
+                                {Math.floor(Math.abs(summary.difference) / 60)}:
+                                {String(Math.abs(summary.difference) % 60).padStart(2, "0")}
+                            </p>
+
+                        </div>
+                    </div>
+
+                    <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                            className={`h-full ${summary.worked >= summary.tracked
+                                ? "bg-green-600"
+                                : summary.worked >= summary.tracked * 0.6
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                                }`}
+                            style={{
+                                width: summary.tracked
+                                    ? `${Math.min((summary.worked / summary.tracked) * 100, 100)}%`
+                                    : "0%",
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+
+
+
             {/* ===== CARDS ===== */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {data.map((emp: any) => (
@@ -129,6 +228,38 @@ export default function EmployeeDailyOverview() {
                                     Math.round((worked / emp.totalEstimatedMinutes) * 100),
                                     100
                                 );
+
+                                const summary = (() => {
+                                    const source = selectedUserId
+                                        ? data.filter((d: any) => d.userId === selectedUserId)
+                                        : data;
+
+                                    let tracked = 0;
+                                    let worked = 0;
+
+                                    source.forEach((emp: any) => {
+                                        if (emp.checkIn && emp.checkOut) {
+                                            const [inH, inM] = emp.checkIn.split(":").map(Number);
+                                            const [outH, outM] = emp.checkOut.split(":").map(Number);
+
+                                            const trackedMinutes = outH * 60 + outM - (inH * 60 + inM);
+                                            tracked += Math.max(trackedMinutes, 0);
+                                        }
+
+                                        worked +=
+                                            emp.tasks
+                                                ?.filter((t: any) => t.status === "approved")
+                                                .reduce((sum: number, t: any) => sum + (t.minutes || 0), 0) || 0;
+                                    });
+
+                                    return {
+                                        tracked,
+                                        worked,
+                                        difference: tracked - worked,
+                                        hasData: tracked > 0,
+                                    };
+                                })();
+
 
                                 return (
                                     <div className="mt-2">
@@ -268,6 +399,82 @@ export default function EmployeeDailyOverview() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={openSummary} onOpenChange={setOpenSummary}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Employee Time Summary</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {(selectedUserId
+                            ? data.filter((d: any) => d.userId === selectedUserId)
+                            : data
+                        ).map((emp: any) => {
+                            let tracked = 0;
+                            if (emp.checkIn && emp.checkOut) {
+                                const [inH, inM] = emp.checkIn.split(":").map(Number);
+                                const [outH, outM] = emp.checkOut.split(":").map(Number);
+                                tracked = Math.max(
+                                    outH * 60 + outM - (inH * 60 + inM),
+                                    0
+                                );
+                            }
+
+                            const worked =
+                                emp.tasks
+                                    ?.filter((t: any) => t.status === "approved")
+                                    .reduce((s: number, t: any) => s + (t.minutes || 0), 0) || 0;
+
+                            const diff = tracked - worked;
+
+                            return (
+                                <div
+                                    key={emp.userId}
+                                    className="flex items-center justify-between rounded-lg border p-4"
+                                >
+                                    <div>
+                                        <p className="font-medium">{emp.userName}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(emp.date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-6 text-sm text-right">
+                                        <div>
+                                            <p className="text-muted-foreground">Tracked</p>
+                                            <p className="font-semibold">
+                                                {Math.floor(tracked / 60)}:
+                                                {String(tracked % 60).padStart(2, "0")}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-muted-foreground">Task</p>
+                                            <p className="font-semibold">
+                                                {Math.floor(worked / 60)}:
+                                                {String(worked % 60).padStart(2, "0")}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-muted-foreground">Diff</p>
+                                            <p
+                                                className={`font-semibold ${diff >= 0 ? "text-red-600" : "text-green-600"
+                                                    }`}
+                                            >
+                                                {Math.floor(Math.abs(diff) / 60)}:
+                                                {String(Math.abs(diff) % 60).padStart(2, "0")}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
