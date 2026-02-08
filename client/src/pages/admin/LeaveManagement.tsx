@@ -129,7 +129,7 @@ export default function LeaveManagement() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Leave Management</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Leave Management</h2>
         <p className="text-muted-foreground mt-1">
           Review and manage employee leave requests.
         </p>
@@ -146,162 +146,214 @@ export default function LeaveManagement() {
         {/* ---------------------- */}
         <TabsContent value="pending" className="mt-4">
           <div className="rounded-md border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date Range</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
+            {/* MOBILE VIEW */}
+            <div className="block md:hidden">
+              <div className="space-y-4 p-4">
                 {pending.map((request: any) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="font-medium">
-                      {request.userName || `User #${request.userId}`}
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge variant="outline">{request.leaveType}</Badge>
-                    </TableCell>
-
-                    <TableCell>
-                      {formatDate(request.startDate)} –{" "}
-                      {formatDate(request.endDate)}
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        {request.dayType === "half" ? (
-                          <>
-                            <div className="font-medium text-orange-600">Half Day</div>
-                            <div>
-                              {request.startTime} – {request.endTime}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="font-medium text-green-600">Full Day</div>
-                        )}
+                  <div
+                    key={request.id}
+                    className="rounded-lg border p-4 space-y-3"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">
+                          {request.userName || `User #${request.userId}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {request.leaveType}
+                        </p>
                       </div>
 
-                    </TableCell>
-
-                    <TableCell
-                      className="max-w-[200px] truncate"
-                      title={request.reason}
-                    >
-                      {request.reason}
-                    </TableCell>
-
-                    <TableCell>
                       <Badge className="bg-yellow-500 text-white">
                         Pending
                       </Badge>
-                    </TableCell>
+                    </div>
 
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
-                          onClick={() =>
-                            handleUpdateStatus(request.id, "rejected")
-                          }
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                    <div className="text-sm space-y-1">
+                      <p>
+                        {formatDate(request.startDate)} –{" "}
+                        {formatDate(request.endDate)}
+                      </p>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
-                          onClick={() =>
-                            handleUpdateStatus(request.id, "approved")
-                          }
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      {request.dayType === "half" ? (
+                        <p className="text-orange-600 font-medium">
+                          Half Day • {request.startTime} – {request.endTime}
+                        </p>
+                      ) : (
+                        <p className="text-green-600 font-medium">
+                          Full Day
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-muted-foreground">
+                      {request.reason}
+                    </p>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-red-600"
+                        onClick={() =>
+                          handleUpdateStatus(request.id, "rejected")
+                        }
+                      >
+                        Reject
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-green-600"
+                        onClick={() =>
+                          handleUpdateStatus(request.id, "approved")
+                        }
+                      >
+                        Approve
+                      </Button>
+                    </div>
+                  </div>
                 ))}
 
                 {pending.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-muted-foreground h-24"
-                    >
-                      No pending requests.
-                    </TableCell>
-                  </TableRow>
+                  <p className="text-center text-muted-foreground">
+                    No pending requests.
+                  </p>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
+
+            {/* DESKTOP TABLE — YOUR EXISTING CODE */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Date Range</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {pending.map((request: any) => (
+                    <TableRow key={request.id}>
+                      <TableCell className="font-medium">
+                        {request.userName || `User #${request.userId}`}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge variant="outline">{request.leaveType}</Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        {formatDate(request.startDate)} –{" "}
+                        {formatDate(request.endDate)}
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {request.dayType === "half" ? (
+                            <>
+                              <div className="font-medium text-orange-600">
+                                Half Day
+                              </div>
+                              <div>
+                                {request.startTime} – {request.endTime}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="font-medium text-green-600">
+                              Full Day
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell
+                        className="max-w-[200px] truncate"
+                        title={request.reason}
+                      >
+                        {request.reason}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge className="bg-yellow-500 text-white">
+                          Pending
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                            onClick={() =>
+                              handleUpdateStatus(request.id, "rejected")
+                            }
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
+                            onClick={() =>
+                              handleUpdateStatus(request.id, "approved")
+                            }
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {pending.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground h-24"
+                      >
+                        No pending requests.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
+
           <EmployeeLeaveOverview />
         </TabsContent>
+
 
         {/* ---------------------- */}
         {/* HISTORY TAB */}
         {/* ---------------------- */}
         <TabsContent value="history" className="mt-4">
           <div className="rounded-md border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Day Type</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Date Range</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-
-
-              <TableBody>
+            {/* MOBILE VIEW */}
+            <div className="block md:hidden">
+              <div className="space-y-4 p-4">
                 {history.map((request: any) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="font-medium">
-                      {request.userName || `User #${request.userId}`}
-                    </TableCell>
+                  <div
+                    key={request.id}
+                    className="rounded-lg border p-4 space-y-3"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">
+                          {request.userName || `User #${request.userId}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDate(request.startDate)} –{" "}
+                          {formatDate(request.endDate)}
+                        </p>
+                      </div>
 
-                    {/* Day Type */}
-                    <TableCell>
-                      <span
-                        className={`text-sm font-medium ${request.dayType === "half"
-                          ? "text-orange-600"
-                          : "text-green-600"
-                          }`}
-                      >
-                        {request.dayType === "half" ? "Half Day" : "Full Day"}
-                      </span>
-
-                      {request.dayType === "half" && (
-                        <div className="text-xs text-muted-foreground">
-                          {request.startTime} – {request.endTime}
-                        </div>
-                      )}
-                    </TableCell>
-
-                    {/* Reason */}
-                    <TableCell
-                      className="max-w-[200px] truncate"
-                      title={request.reason}
-                    >
-                      {request.reason || "—"}
-                    </TableCell>
-
-                    {/* Date Range */}
-                    <TableCell>
-                      {formatDate(request.startDate)} – {formatDate(request.endDate)}
-                    </TableCell>
-
-
-                    <TableCell>
                       <Badge
                         className={
                           request.status === "approved"
@@ -311,37 +363,136 @@ export default function LeaveManagement() {
                       >
                         {request.status}
                       </Badge>
-                    </TableCell>
+                    </div>
 
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
-                        onClick={() => setDeleteId(request.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="text-sm">
+                      {request.dayType === "half" ? (
+                        <p className="text-orange-600 font-medium">
+                          Half Day • {request.startTime} – {request.endTime}
+                        </p>
+                      ) : (
+                        <p className="text-green-600 font-medium">
+                          Full Day
+                        </p>
+                      )}
+                    </div>
 
-                    </TableCell>
-                  </TableRow>
+                    <p className="text-sm text-muted-foreground">
+                      {request.reason || "—"}
+                    </p>
 
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600"
+                      onClick={() => setDeleteId(request.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 ))}
 
                 {history.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-muted-foreground h-24"
-                    >
-                      No leave history found.
-                    </TableCell>
-                  </TableRow>
+                  <p className="text-center text-muted-foreground">
+                    No leave history found.
+                  </p>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
+
+            {/* DESKTOP TABLE — YOUR EXISTING CODE */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Day Type</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Date Range</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {history.map((request: any) => (
+                    <TableRow key={request.id}>
+                      <TableCell className="font-medium">
+                        {request.userName || `User #${request.userId}`}
+                      </TableCell>
+
+                      <TableCell>
+                        <span
+                          className={`text-sm font-medium ${request.dayType === "half"
+                              ? "text-orange-600"
+                              : "text-green-600"
+                            }`}
+                        >
+                          {request.dayType === "half"
+                            ? "Half Day"
+                            : "Full Day"}
+                        </span>
+
+                        {request.dayType === "half" && (
+                          <div className="text-xs text-muted-foreground">
+                            {request.startTime} – {request.endTime}
+                          </div>
+                        )}
+                      </TableCell>
+
+                      <TableCell
+                        className="max-w-[200px] truncate"
+                        title={request.reason}
+                      >
+                        {request.reason || "—"}
+                      </TableCell>
+
+                      <TableCell>
+                        {formatDate(request.startDate)} –{" "}
+                        {formatDate(request.endDate)}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge
+                          className={
+                            request.status === "approved"
+                              ? "bg-green-500 text-white"
+                              : "bg-red-500 text-white"
+                          }
+                        >
+                          {request.status}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                          onClick={() => setDeleteId(request.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {history.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground h-24"
+                      >
+                        No leave history found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </TabsContent>
+
       </Tabs>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

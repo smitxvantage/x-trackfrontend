@@ -5,9 +5,22 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/authStore";
+import { uploadAvatarApi } from "@/api/profile.api";
+import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
+
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
+  if (!user) {
+    return null; // or a loader
+  }
+
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -23,10 +36,49 @@ export default function Profile() {
           </CardHeader>
           <CardContent className="flex flex-col items-center text-center">
             <Avatar className="h-32 w-32 mb-4">
-              <AvatarImage src={user?.avatar} />
-              <AvatarFallback className="text-4xl">{user?.name.charAt(0)}</AvatarFallback>
+              <AvatarImage
+                src={
+                  avatarPreview ||
+                  (user.avatar
+                    ? `${import.meta.env.VITE_API_BASE_URL}${user.avatar}`
+                    : undefined)
+                }
+              />
+
+              <AvatarFallback className="text-4xl font-semibold">
+                {user.name
+                  ?.split(" ")
+                  .filter(Boolean)
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase()}
+              </AvatarFallback>
+
             </Avatar>
-            <Button variant="outline" className="w-full mb-2">Change Photo</Button>
+
+            <input
+              type="file"
+              accept="image/*"
+              id="avatarUpload"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                setAvatarFile(file);
+                setAvatarPreview(URL.createObjectURL(file));
+              }}
+            />
+
+            <Button
+              variant="outline"
+              className="w-full mb-2"
+              onClick={() => document.getElementById("avatarUpload")?.click()}
+            >
+              Change Photo
+            </Button>
+
             <p className="text-xs text-muted-foreground">
               JPG, GIF or PNG. Max size of 800K
             </p>
@@ -49,7 +101,7 @@ export default function Profile() {
                 <Input id="email" defaultValue={user?.email} disabled />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
@@ -92,7 +144,41 @@ export default function Profile() {
 
             <div className="flex justify-end gap-4">
               <Button variant="ghost">Cancel</Button>
-              <Button>Save Changes</Button>
+              <Button
+                onClick={async () => {
+                  if (!avatarFile) {
+                    toast({ title: "No image selected" });
+                    return;
+                  }
+
+                  try {
+                    const res = await uploadAvatarApi(avatarFile);
+
+                    useAuthStore.setState((state) => {
+                      if (!state.user) return state;
+
+                      return {
+                        ...state,
+                        user: {
+                          ...state.user,
+                          avatar: res.data.data.avatar,
+                        },
+                      };
+                    });
+
+
+                    toast({ title: "Profile photo updated" });
+                  } catch {
+                    toast({
+                      title: "Failed to upload photo",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                Save Changes
+              </Button>
+
             </div>
           </CardContent>
         </Card>

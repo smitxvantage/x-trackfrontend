@@ -35,6 +35,36 @@ type RecentActivityItem = {
   icon?: string;
 };
 
+const useSessionTimer = (session: {
+  checkInAt: string;
+  totalPausedSeconds: number;
+  isPaused: boolean;
+} | null) => {
+  const [, forceTick] = useState(0);
+
+  useEffect(() => {
+    if (!session || session.isPaused) return;
+
+    const i = setInterval(() => {
+      forceTick((t) => t + 1);
+    }, 1000);
+
+    return () => clearInterval(i);
+  }, [session?.checkInAt, session?.isPaused]);
+
+  if (!session) return 0;
+
+  const start = new Date(session.checkInAt).getTime();
+  const now = Date.now();
+  const paused = Number(session.totalPausedSeconds || 0);
+
+  return Math.max(
+    Math.floor((now - start) / 1000) - paused,
+    0
+  );
+};
+
+
 
 export default function EmployeeDashboard() {
   const [activeSession, setActiveSession] = useState<{
@@ -43,10 +73,9 @@ export default function EmployeeDashboard() {
     isPaused: boolean;
   } | null>(null);
 
-
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const hasActiveSession = Boolean(activeSession?.checkInAt);
-
+  const hasActiveSession =
+    activeSession !== null &&
+    typeof activeSession.checkInAt === "string";
 
 
 
@@ -69,8 +98,8 @@ export default function EmployeeDashboard() {
   const pausedRemainingSeconds = pausedSeconds % 60;
 
   const pausedTime = `${pausedMinutes} min ${pausedRemainingSeconds} sec`;
-  const [baseElapsedSeconds, setBaseElapsedSeconds] = useState(0);
 
+  const elapsedSeconds = useSessionTimer(activeSession);
 
 
 
@@ -79,6 +108,7 @@ export default function EmployeeDashboard() {
     casual: 0,
     sick: 0,
   });
+
 
 
 
@@ -115,22 +145,6 @@ export default function EmployeeDashboard() {
       setActiveSession(session);
 
 
-      if (session && !session.isPaused) {
-        const start = new Date(session.checkInAt).getTime();
-        const now = Date.now();
-        const paused = Number(session.totalPausedSeconds || 0);
-
-        const worked =
-          Math.floor((now - start) / 1000) - paused;
-
-        const safeWorked = Math.max(worked, 0);
-
-        setElapsedSeconds(safeWorked);
-        setBaseElapsedSeconds(safeWorked); // 🔥 critical line
-      } else {
-        setElapsedSeconds(0);
-        setBaseElapsedSeconds(0);
-      }
 
 
 
@@ -218,23 +232,6 @@ export default function EmployeeDashboard() {
     }
   };
 
-  // UPDATE TIMER WHEN CHECKED IN
-  useEffect(() => {
-    if (!activeSession || activeSession.isPaused) return;
-
-    const start = Date.now();
-
-    const interval = setInterval(() => {
-      const deltaSeconds = Math.floor((Date.now() - start) / 1000);
-      setElapsedSeconds(baseElapsedSeconds + deltaSeconds);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [activeSession?.isPaused]);
-
-
-
-
 
   const formatSessionTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -261,7 +258,6 @@ export default function EmployeeDashboard() {
         totalPausedSeconds,
       });
 
-      setElapsedSeconds(0); // reset UI timer cleanly
 
       toast({ title: "Checked in successfully!" });
     } catch (err) {
@@ -277,7 +273,6 @@ export default function EmployeeDashboard() {
       await checkOutApi();
 
       setActiveSession(null);
-      setElapsedSeconds(0);
 
       toast({ title: "Checked out successfully!" });
       loadDashboard();
@@ -290,7 +285,6 @@ export default function EmployeeDashboard() {
     try {
       await pauseApi();
 
-      setBaseElapsedSeconds(elapsedSeconds); // 🔥 freeze time
       setActiveSession((s) =>
         s ? { ...s, isPaused: true } : s
       );
@@ -314,7 +308,6 @@ export default function EmployeeDashboard() {
       if (!session) return;
 
       setActiveSession(session);
-      setBaseElapsedSeconds(elapsedSeconds); // 🔥 resume from frozen value
 
       toast({ title: "Session resumed" });
     } catch {
@@ -341,17 +334,18 @@ export default function EmployeeDashboard() {
 
       {/* TOP HEADER */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Welcome back, {user?.name}!
         </h2>
+
         <p className="text-muted-foreground">
           {format(new Date(), "EEEE, MMMM do yyyy")}
         </p>
       </div>
 
       {/* SESSION TIMER CARD */}
-      <Card className="w-full md:w-fit ml-auto bg-primary text-white shadow-md">
-        <CardContent className="p-4 flex items-center gap-8">
+      <Card className="w-full md:w-fit md:ml-auto bg-primary text-white shadow-md">
+        <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
 
           <div>
             <p className="text-sm opacity-70">Current Session</p>
@@ -368,7 +362,7 @@ export default function EmployeeDashboard() {
 
 
           {hasActiveSession ? (
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
               {activeSession.isPaused ? (
                 <Button onClick={handleResume} className="bg-white text-primary">
                   ▶ Resume
@@ -398,7 +392,7 @@ export default function EmployeeDashboard() {
 
 
       {/* METRIC CARDS */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
 
         {/* WORK HOURS */}
         <Card>
@@ -476,7 +470,7 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* HOLIDAYS + RECENT ACTIVITY */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
 
         {/* UPCOMING HOLIDAYS */}
         <Card className="md:col-span-2">

@@ -103,19 +103,29 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground mt-1">Overview of company performance and attendance.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Dashboard
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Overview of company performance and attendance.
+          </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline">Download Report</Button>
-          <Button>View Analytics</Button>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button variant="outline" className="w-full sm:w-auto">
+            Download Report
+          </Button>
+          <Button className="w-full sm:w-auto">
+            View Analytics
+          </Button>
         </div>
       </div>
 
+
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card
           onClick={() => setOpenEmployees(true)}
           className="cursor-pointer hover:shadow-md transition"
@@ -199,13 +209,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Weekly Work Hours</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <div className="h-[300px] w-full">
+            <div className="h-[240px] sm:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.weeklyWorkHours}>
 
@@ -234,7 +244,7 @@ export default function AdminDashboard() {
             <CardTitle>Attendance Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full">
+            <div className="h-[240px] sm:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.attendanceOverview}>
 
@@ -254,7 +264,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Activity / Pending Actions */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Pending Leave Requests</CardTitle>
@@ -306,7 +316,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
       <Dialog open={openOnLeave} onOpenChange={setOpenOnLeave}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="w-[95vw] max-w-3xl">
           <DialogHeader>
             <DialogTitle>Employees On Leave Today</DialogTitle>
           </DialogHeader>
@@ -339,7 +349,7 @@ export default function AdminDashboard() {
       </Dialog>
 
       <Dialog open={openPendingReports} onOpenChange={setOpenPendingReports}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="w-[95vw] max-w-3xl">
           <DialogHeader>
             <DialogTitle>Pending Daily Reports</DialogTitle>
           </DialogHeader>
@@ -373,7 +383,7 @@ export default function AdminDashboard() {
       </Dialog>
 
       <Dialog open={openEmployees} onOpenChange={setOpenEmployees}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="w-[95vw] max-w-3xl">
           <DialogHeader>
             <DialogTitle>All Employees</DialogTitle>
           </DialogHeader>

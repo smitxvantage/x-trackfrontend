@@ -248,9 +248,11 @@ export default function MyReports() {
     <div className="space-y-6">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Daily Reports</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Daily Reports
+          </h2>
           <p className="text-muted-foreground mt-1">
             Submit and track your daily work reports.
           </p>
@@ -358,7 +360,7 @@ export default function MyReports() {
       </div>
 
       {/* REPORT CARDS */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {Object.entries(
           reports.reduce((acc: any, report: any) => {
             const dateKey = new Date(report.date).toLocaleDateString();
@@ -411,94 +413,134 @@ export default function MyReports() {
 
 
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Reports – {selectedDate}</DialogTitle>
-          </DialogHeader>
-
-          <div className="w-full overflow-x-auto relative">
-            <table className="w-full min-w-[600px] border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Task</th>
-                  <th className="text-left p-2">Estimated Time</th>
-                  <th className="text-left p-2">Admin</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Action</th>
-
-                </tr>
-              </thead>
-
-              <tbody>
-                {selectedReports.map((report) => {
-                  const task = report.tasks;
-                  const time = formatMinutes(report.hoursSpent || 0);
-                  const admin = report.admin || "-";
-                  return (
-                    <tr key={report.id} className="border-b">
-                      <td className="p-4 max-w-[420px] align-top">
-                        <p
-                          className="
-                            text-sm text-foreground
-                            leading-relaxed
-                            line-clamp-3
-                            hover:line-clamp-none
-                            cursor-default
-                          "
-                          title={task}
-                        >
-                          {task}
-                        </p>
-                      </td>
-
-                      <td className="p-2 whitespace-nowrap">
-                        {time}
-                      </td>
-                      <td className="p-2 max-w-[150px] break-words whitespace-normal">
-                        {admin}
-                      </td>
-                      <td className="p-2 whitespace-nowrap">
-                        {report.status}
-                      </td>
-                      <td className="p-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const minutes = report.hoursSpent || 0;
+<DialogContent
+  className="
+    w-[95vw] max-w-3xl
+    h-[90vh]
+    flex flex-col
+    p-0
+  "
+>          <DialogHeader className="px-4 py-3 border-b">
+  <DialogTitle>
+    Reports – {selectedDate}
+  </DialogTitle>
+</DialogHeader>
 
 
-                            setEditingReport(report);
-                            setEditTask(task || "");
-                            setEditHours(Math.floor(minutes / 60));
-                            setEditMinutes(minutes % 60);
-                            setEditAdmin(report.admin || "");
-                            setIsEditOpen(true);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      </td>
+<div className="flex-1 overflow-y-auto px-4 py-4">
+            {/* MOBILE VIEW */}
+            <div className="block md:hidden space-y-4">
+              {selectedReports.map((report) => {
+                const task = report.tasks;
+                const time = formatMinutes(report.hoursSpent || 0);
+                const admin = report.admin || "-";
 
-                    </tr>
-                  );
-                })}
-              </tbody>
+                return (
+                  <div
+                    key={report.id}
+                    className="rounded-lg border p-4 space-y-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <Badge>{report.status}</Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const minutes = report.hoursSpent || 0;
+                          setEditingReport(report);
+                          setEditTask(task || "");
+                          setEditHours(Math.floor(minutes / 60));
+                          setEditMinutes(minutes % 60);
+                          setEditAdmin(report.admin || "");
+                          setIsEditOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </div>
 
-              <tfoot>
-                <tr className="border-t font-medium bg-muted/40">
-                  <td className="p-2">Total</td>
-                  <td className="p-2 whitespace-nowrap">
-                    {formatMinutes(selectedDayTotalMinutes)}
+                    <p className="text-sm leading-relaxed">
+                      {task}
+                    </p>
 
-                  </td>
-                  <td />
-                  <td />
-                </tr>
-              </tfoot>
+                    <div className="text-sm text-muted-foreground">
+                      <p>Time: {time}</p>
+                      <p>Admin: {admin}</p>
+                    </div>
+                  </div>
+                );
+              })}
 
-            </table>
+              <div className="border-t pt-3 text-sm font-medium">
+                Total: {formatMinutes(selectedDayTotalMinutes)}
+              </div>
+            </div>
+
+            {/* DESKTOP TABLE */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[600px] border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Task</th>
+                    <th className="text-left p-2">Estimated Time</th>
+                    <th className="text-left p-2">Admin</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {selectedReports.map((report) => {
+                    const task = report.tasks;
+                    const time = formatMinutes(report.hoursSpent || 0);
+                    const admin = report.admin || "-";
+
+                    return (
+                      <tr key={report.id} className="border-b">
+                        <td className="p-4 max-w-[420px] align-top">
+                          <p className="text-sm leading-relaxed">
+                            {task}
+                          </p>
+                        </td>
+                        <td className="p-2 whitespace-nowrap">{time}</td>
+                        <td className="p-2">{admin}</td>
+                        <td className="p-2">{report.status}</td>
+                        <td className="p-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const minutes = report.hoursSpent || 0;
+                              setEditingReport(report);
+                              setEditTask(task || "");
+                              setEditHours(Math.floor(minutes / 60));
+                              setEditMinutes(minutes % 60);
+                              setEditAdmin(report.admin || "");
+                              setIsEditOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+
+                <tfoot>
+                  <tr className="border-t font-medium bg-muted/40">
+                    <td className="p-2">Total</td>
+                    <td className="p-2 whitespace-nowrap">
+                      {formatMinutes(selectedDayTotalMinutes)}
+                    </td>
+                    <td />
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
+
         </DialogContent>
       </Dialog>
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
