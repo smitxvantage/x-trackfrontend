@@ -60,95 +60,126 @@ export default function AttendanceList() {
     });
   }, [data, search, date]);
   console.log(filteredData, " filteredData");
-  return (
-    <div className="space-y-6">
-      {/* PAGE HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Attendance</h2>
-          <p className="text-muted-foreground mt-1">
-            Track employee check-ins and work hours.
-          </p>
-        </div>
+ return (
+  <div className="space-y-6">
+    {/* PAGE HEADER */}
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Attendance
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          Track employee check-ins and work hours.
+        </p>
+      </div>
 
-        <Button variant="outline" className="gap-2">
-          <Download className="h-4 w-4" /> Export Report
+      <Button variant="outline" className="gap-2">
+        <Download className="h-4 w-4" /> Export Report
+      </Button>
+    </div>
+
+    {/* SEARCH + DATE FILTER */}
+    <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border">
+      <Input
+        placeholder="Search employee..."
+        className="w-full sm:max-w-sm"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <div className="flex gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-60 justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Button variant="outline" size="icon">
+          <Filter className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
+    </div>
 
-      {/* SEARCH + DATE FILTER */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border">
-        <div className="flex-1">
-          <Input
-            placeholder="Search employee..."
-            className="max-w-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          {/* DATE PICKER */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
+    {/* ATTENDANCE LIST */}
+    <div className="rounded-md border bg-card">
+      {/* MOBILE */}
+      <div className="block md:hidden">
+        {isLoading ? (
+          <div className="p-6 text-center text-muted-foreground">
+            Loading attendance...
+          </div>
+        ) : (
+          <div className="space-y-4 p-4">
+            {filteredData.map((record: any) => (
+              <div
+                key={record.userId + record.date}
+                className="rounded-lg border p-4 space-y-3"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
+                <div className="flex justify-between">
+                  <div>
+                    <p className="font-medium">
+                      {record.userName || `User #${record.userId}`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {record.date}
+                    </p>
+                  </div>
 
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-                className="p-3"
-                classNames={{
-                  months: "flex flex-col space-y-4",
-                  month: "space-y-4",
-                  caption: "flex justify-center pt-1 relative items-center",
-                  caption_label: "text-sm font-medium",
-                  nav: "space-x-1 flex items-center",
-                  nav_button:
-                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                  nav_button_previous: "absolute left-1",
-                  nav_button_next: "absolute right-1",
-                  table: "w-full border-collapse space-y-1",
-                  head_row: "flex",
-                  head_cell:
-                    "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                  row: "flex w-full mt-2",
-                  cell:
-                    "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-primary/10 rounded-md",
-                  day:
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-muted rounded-md",
-                  day_selected:
-                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                  day_today: "bg-muted text-foreground font-semibold",
-                  day_outside: "text-muted-foreground opacity-50",
-                  day_disabled: "text-muted-foreground opacity-50",
-                  day_hidden: "invisible",
-                }}
-              />
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                    {record.status}
+                  </Badge>
+                </div>
 
-            </PopoverContent>
-          </Popover>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Check In</p>
+                    <p>{record.firstCheckIn || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Check Out</p>
+                    <p>{record.lastCheckOut || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total</p>
+                    <p>{formatHours(Number(record.totalHours))}</p>
+                  </div>
+                </div>
 
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-          </Button>
-        </div>
+                <Button size="sm" variant="outline" className="w-full">
+                  Edit
+                </Button>
+              </div>
+            ))}
+
+            {filteredData.length === 0 && (
+              <p className="text-center text-muted-foreground">
+                No attendance records found.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ATTENDANCE TABLE */}
-      <div className="rounded-md border bg-card">
+      {/* DESKTOP */}
+      <div className="hidden md:block">
         {isLoading ? (
           <div className="p-6 text-center text-muted-foreground">
             Loading attendance...
@@ -173,44 +204,30 @@ export default function AttendanceList() {
                   <TableCell className="font-medium">
                     {record.userName || `User #${record.userId}`}
                   </TableCell>
-
                   <TableCell>{record.date}</TableCell>
-
                   <TableCell>{record.firstCheckIn || "-"}</TableCell>
                   <TableCell>{record.lastCheckOut || "-"}</TableCell>
-
                   <TableCell>
                     {formatHours(Number(record.totalHours))}
                   </TableCell>
-
                   <TableCell>
                     <Badge className="bg-green-100 text-green-700 border-green-200">
                       {record.status}
                     </Badge>
                   </TableCell>
-
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
+                    <Button size="sm" variant="ghost">
                       Edit
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
-
-              {filteredData.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground h-24"
-                  >
-                    No attendance records found.
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }
