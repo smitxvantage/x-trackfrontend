@@ -45,9 +45,8 @@ export default function EmployeeDashboard() {
 
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const hasActiveSession =
-    activeSession !== null &&
-    typeof activeSession.checkInAt === "string";
+  const hasActiveSession = Boolean(activeSession?.checkInAt);
+
 
 
 
@@ -112,9 +111,9 @@ export default function EmployeeDashboard() {
       // FIND TODAY'S ATTENDANCE
       const attendanceData = attendanceRes.data.data;
 
-      const session = attendanceData.activeSession;
-
+      const session = attendanceData?.activeSession ?? null;
       setActiveSession(session);
+
 
       if (session && !session.isPaused) {
         const start = new Date(session.checkInAt).getTime();
@@ -361,7 +360,7 @@ export default function EmployeeDashboard() {
             </p>
 
           </div>
-          {activeSession && activeSession.totalPausedSeconds > 0 && (
+          {activeSession?.totalPausedSeconds > 0 && (
             <p className="text-xs opacity-70 mt-1">
               Paused: {pausedTime}
             </p>
