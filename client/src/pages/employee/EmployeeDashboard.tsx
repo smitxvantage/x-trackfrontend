@@ -35,34 +35,13 @@ type RecentActivityItem = {
   icon?: string;
 };
 
-const useSessionTimer = (session: {
-  checkInAt: string;
-  totalPausedSeconds: number;
-  isPaused: boolean;
-} | null) => {
-  const [, forceTick] = useState(0);
+const TIMER_RUNNING_KEY = "attendance_timer_running";
+const SESSION_START_KEY = "attendance_session_start";
+const PAUSED_TOTAL_KEY = "attendance_paused_total";
+const PAUSED_AT_KEY = "attendance_paused_at";
 
-  useEffect(() => {
-    if (!session || session.isPaused) return;
+const DAILY_TARGET_MINUTES = 8 * 60 + 30; // 510 minutes
 
-    const i = setInterval(() => {
-      forceTick((t) => t + 1);
-    }, 1000);
-
-    return () => clearInterval(i);
-  }, [session?.checkInAt, session?.isPaused]);
-
-  if (!session) return 0;
-
-  const start = new Date(session.checkInAt).getTime();
-  const now = Date.now();
-  const paused = Number(session.totalPausedSeconds || 0);
-
-  return Math.max(
-    Math.floor((now - start) / 1000) - paused,
-    0
-  );
-};
 
 
 
@@ -78,6 +57,8 @@ export default function EmployeeDashboard() {
     typeof activeSession.checkInAt === "string";
 
 
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
 
   const [user, setUser] = useState<any>(null);
   const [todayHours, setTodayHours] = useState("0h 00m");
@@ -99,7 +80,7 @@ export default function EmployeeDashboard() {
 
   const pausedTime = `${pausedMinutes} min ${pausedRemainingSeconds} sec`;
 
-  const elapsedSeconds = useSessionTimer(activeSession);
+  const [todayCompletedMinutes, setTodayCompletedMinutes] = useState(0);
 
 
 
@@ -109,12 +90,43 @@ export default function EmployeeDashboard() {
     sick: 0,
   });
 
+  useEffect(() => {
+    if (!isRunning) return;
 
+    const interval = setInterval(() => {
+      const start = Number(localStorage.getItem(SESSION_START_KEY));
+      const pausedTotal = Number(localStorage.getItem(PAUSED_TOTAL_KEY)) || 0;
+      const pausedAt = Number(localStorage.getItem(PAUSED_AT_KEY));
 
+      if (!start) return;
+
+      let pausedExtra = 0;
+      if (pausedAt) {
+        pausedExtra = Math.floor((Date.now() - pausedAt) / 1000);
+      }
+
+      const seconds = Math.floor(
+        (Date.now() - start) / 1000 - pausedTotal - pausedExtra
+      );
+
+      setElapsedSeconds(Math.max(seconds, 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRunning]);
 
   useEffect(() => {
+    const running = localStorage.getItem(TIMER_RUNNING_KEY) === "true";
+    if (running) {
+      setIsRunning(true);
+    }
+
     loadDashboard();
   }, []);
+
+
+
+
 
   const loadDashboard = async () => {
     try {
@@ -144,6 +156,12 @@ export default function EmployeeDashboard() {
       const session = attendanceData.activeSession;
 
       setActiveSession(session);
+
+
+      if (!session) {
+        setIsRunning(false);
+      }
+
 
 
 
@@ -183,35 +201,44 @@ export default function EmployeeDashboard() {
       // -------- TODAY COMPLETED HOURS --------
       const records = attendanceData.records || [];
 
-      const todayCompleted = records.find(
-        (r: any) => r.date === today && r.checkIn && r.checkOut
-      );
+      const todayRecords = records.filter((r: any) => {
+        const recordDate = new Date(r.date).toISOString().split("T")[0];
+        return recordDate === today && r.checkIn && r.checkOut;
+      });
 
-      if (todayCompleted) {
-        const [sh, sm] = todayCompleted.checkIn.split(":").map(Number);
-        const [eh, em] = todayCompleted.checkOut.split(":").map(Number);
+
+      let totalMinutes = 0;
+
+      todayRecords.forEach((r: any) => {
+        const [sh, sm] = r.checkIn.split(":").map(Number);
+        const [eh, em] = r.checkOut.split(":").map(Number);
 
         const start = new Date(0, 0, 0, sh, sm);
         const end = new Date(0, 0, 0, eh, em);
 
-        const diffMinutes = Math.floor(
+        const diff = Math.floor(
           (end.getTime() - start.getTime()) / 60000
         );
 
-        const h = Math.floor(diffMinutes / 60);
-        const m = diffMinutes % 60;
+        totalMinutes += diff;
+      });
 
-        setTodayHours(`${h}h ${m}m`);
-        setWorkProgress(Math.min((diffMinutes / 480) * 100, 100));
-      } else {
-        setTodayHours("0h 00m");
-        setWorkProgress(0);
-      }
+      // ✅ store completed minutes (even if 0)
+      setTodayCompletedMinutes(totalMinutes);
+
+      // ✅ format display safely
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+
+      setTodayHours(`${h}h ${m.toString().padStart(2, "0")}m`);
 
 
-      if (todayCompleted) {
+
+
+      if (todayRecords.length > 0) {
         activity.push({ title: "Checked Out", time: "Today" });
       }
+
 
 
       if (pending.length > 0) {
@@ -245,50 +272,41 @@ export default function EmployeeDashboard() {
 
   const handleCheckIn = async () => {
     try {
-      const res = await checkInApi();
+      await checkInApi();
 
-      if (!res?.data?.success) {
-        throw new Error("Check-in API failed");
-      }
+      const now = Date.now();
 
-      const { checkInAt, isPaused, totalPausedSeconds } = res.data.data;
+      localStorage.setItem(SESSION_START_KEY, String(now));
+      localStorage.setItem(PAUSED_TOTAL_KEY, "0");
+      localStorage.removeItem(PAUSED_AT_KEY);
+      localStorage.setItem(TIMER_RUNNING_KEY, "true");
+
+      setElapsedSeconds(0);
+      setIsRunning(true);
 
       setActiveSession({
-        checkInAt,
-        isPaused,
-        totalPausedSeconds,
+        checkInAt: new Date(now).toISOString(),
+        isPaused: false,
+        totalPausedSeconds: 0,
       });
 
-
       toast({ title: "Checked in successfully!" });
-    } catch (err) {
-      console.error("Check-in error:", err);
+    } catch {
       toast({ title: "Check-in failed", variant: "destructive" });
     }
   };
 
 
 
-  const handleCheckOut = async () => {
-    try {
-      await checkOutApi();
-
-      setActiveSession(null);
-
-      toast({ title: "Checked out successfully!" });
-      loadDashboard();
-    } catch {
-      toast({ title: "Check-out failed", variant: "destructive" });
-    }
-  };
-
   const handlePause = async () => {
     try {
       await pauseApi();
 
-      setActiveSession((s) =>
-        s ? { ...s, isPaused: true } : s
-      );
+      localStorage.setItem(PAUSED_AT_KEY, String(Date.now()));
+      localStorage.setItem(TIMER_RUNNING_KEY, "false");
+
+      setIsRunning(false);
+      setActiveSession(s => s ? { ...s, isPaused: true } : s);
 
       toast({ title: "Session paused" });
     } catch {
@@ -299,22 +317,55 @@ export default function EmployeeDashboard() {
 
 
 
+
+
   const handleResume = async () => {
     try {
       await resumeApi();
 
-      const attendanceRes = await getMyAttendanceApi();
-      const session = attendanceRes.data.data.activeSession;
+      const pausedAt = Number(localStorage.getItem(PAUSED_AT_KEY));
+      if (pausedAt) {
+        const pausedSeconds = Math.floor((Date.now() - pausedAt) / 1000);
+        const totalPaused =
+          Number(localStorage.getItem(PAUSED_TOTAL_KEY)) || 0;
 
-      if (!session) return;
+        localStorage.setItem(
+          PAUSED_TOTAL_KEY,
+          String(totalPaused + pausedSeconds)
+        );
+      }
 
-      setActiveSession(session);
+      localStorage.removeItem(PAUSED_AT_KEY);
+      localStorage.setItem(TIMER_RUNNING_KEY, "true");
+
+      setIsRunning(true);
+      setActiveSession(s => s ? { ...s, isPaused: false } : s);
 
       toast({ title: "Session resumed" });
     } catch {
       toast({ title: "Resume failed", variant: "destructive" });
     }
   };
+
+  const handleCheckOut = async () => {
+    try {
+      await checkOutApi();
+
+      setIsRunning(false);
+      setActiveSession(null);
+
+      localStorage.removeItem(SESSION_START_KEY);
+      localStorage.removeItem(PAUSED_TOTAL_KEY);
+      localStorage.removeItem(PAUSED_AT_KEY);
+      localStorage.removeItem(TIMER_RUNNING_KEY);
+
+      toast({ title: "Checked out successfully!" });
+      loadDashboard();
+    } catch {
+      toast({ title: "Check-out failed", variant: "destructive" });
+    }
+  };
+
 
 
   const getLiveWorkTime = () => {
@@ -324,9 +375,33 @@ export default function EmployeeDashboard() {
 
     return {
       label: `${h}h ${m.toString().padStart(2, "0")}m`,
-      progress: Math.min((totalMinutes / 480) * 100, 100),
+      progress: Math.min(
+        (totalMinutes / DAILY_TARGET_MINUTES) * 100,
+        100
+      ),
     };
   };
+
+  // ✅ PLACE THIS FUNCTION RIGHT HERE ⬇⬇⬇
+  const getTotalWorkTimeToday = () => {
+    const liveMinutes = hasActiveSession
+      ? Math.floor(elapsedSeconds / 60)
+      : 0;
+
+    const totalMinutes = todayCompletedMinutes + liveMinutes;
+
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+
+    return {
+      label: `${h}h ${m.toString().padStart(2, "0")}m`,
+      progress: Math.min(
+        (totalMinutes / DAILY_TARGET_MINUTES) * 100,
+        100
+      ),
+    };
+  };
+
 
 
 
@@ -396,31 +471,30 @@ export default function EmployeeDashboard() {
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
 
         {/* WORK HOURS */}
+        {/* WORK HOURS TODAY */}
         <Card>
-          <CardHeader className="flex justify-between pb-2">
+          <CardHeader className="pb-2">
             <CardTitle>Work Hours Today</CardTitle>
           </CardHeader>
-          <CardContent>
-            {hasActiveSession ? (
-              (() => {
-                const live = getLiveWorkTime();
-                return (
-                  <>
-                    <p className="text-2xl font-bold">{live.label}</p>
-                    <Progress value={live.progress} className="h-2 mt-2" />
-                  </>
-                );
-              })()
-            ) : (
-              <>
-                <p className="text-2xl font-bold">{todayHours}</p>
-                <Progress value={workProgress} className="h-2 mt-2" />
-              </>
-            )}
 
-            <p className="text-muted-foreground text-xs mt-1">Target: 8h 00m</p>
+          <CardContent>
+            {(() => {
+              const total = getTotalWorkTimeToday();
+
+              return (
+                <>
+                  <p className="text-2xl font-bold">{total.label}</p>
+                  <Progress value={total.progress} className="h-2 mt-2" />
+                </>
+              );
+            })()}
+
+            <p className="text-muted-foreground text-xs mt-1">
+              Target: 8h 30m
+            </p>
           </CardContent>
         </Card>
+
 
         {/* LEAVE BALANCE */}
         <Card>

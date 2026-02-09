@@ -42,13 +42,13 @@ export default function MyAttendance() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">
-  My Attendance
-</h2>
+          My Attendance
+        </h2>
 
         <p className="text-muted-foreground mt-1">Your attendance history.</p>
       </div>
 
-<div className="grid gap-6 grid-cols-1 md:grid-cols-12">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-12">
 
         {/* Calendar + Summary */}
         <div className="md:col-span-4">
@@ -117,133 +117,133 @@ export default function MyAttendance() {
 
         {/* Attendance Log Table */}
         {/* Attendance Log */}
-<div className="md:col-span-8">
-  <Card className="h-full">
-    <CardHeader>
-      <CardTitle>Attendance Log</CardTitle>
-    </CardHeader>
+        <div className="md:col-span-8">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Attendance Log</CardTitle>
+            </CardHeader>
 
-    <CardContent>
-      {/* MOBILE VIEW */}
-      <div className="block md:hidden space-y-4">
-        {records.length === 0 && (
-          <p className="text-center text-muted-foreground py-6">
-            No attendance records found
-          </p>
-        )}
+            <CardContent>
+              {/* MOBILE VIEW */}
+              <div className="block md:hidden space-y-4">
+                {records.length === 0 && (
+                  <p className="text-center text-muted-foreground py-6">
+                    No attendance records found
+                  </p>
+                )}
 
-        {[...records].reverse().map((r) => {
-          const total =
-            r.totalHours != null
-              ? (() => {
-                  const totalMinutes = Math.round(Number(r.totalHours) * 60);
-                  const h = Math.floor(totalMinutes / 60);
-                  const m = totalMinutes % 60;
-                  return `${h}h ${m}m`;
-                })()
-              : "-";
-
-          return (
-            <div
-              key={r.id}
-              className="rounded-lg border p-4 space-y-2"
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-medium">{r.date}</span>
-                <Badge
-                  variant="outline"
-                  className={
-                    r.status === "on-time"
-                      ? "bg-green-50 text-green-700 border-green-200"
-                      : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                  }
-                >
-                  {r.status}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Check In</p>
-                  <p>{r.checkIn ?? "-"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Check Out</p>
-                  <p>{r.checkOut ?? "-"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Total</p>
-                  <p>{total}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* DESKTOP TABLE — YOUR EXISTING CODE */}
-      <div className="hidden md:block">
-        <Table>
-          <TableHeader className="text-xs uppercase tracking-wide text-muted-foreground">
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Check In</TableHead>
-              <TableHead>Check Out</TableHead>
-              <TableHead>Total Hours</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {records.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="text-center py-6 text-muted-foreground"
-                >
-                  No attendance records found
-                </TableCell>
-              </TableRow>
-            )}
-
-            {[...records].reverse().map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.date}</TableCell>
-                <TableCell>{r.checkIn ?? "-"}</TableCell>
-                <TableCell>{r.checkOut ?? "-"}</TableCell>
-                <TableCell>
-                  {r.totalHours != null
-                    ? (() => {
-                        const totalMinutes = Math.round(
-                          Number(r.totalHours) * 60
-                        );
+                {[...records].reverse().map((r) => {
+                  const total =
+                    r.totalHours != null
+                      ? (() => {
+                        const totalMinutes = Math.round(Number(r.totalHours) * 60);
                         const h = Math.floor(totalMinutes / 60);
                         const m = totalMinutes % 60;
-                        return `${h} hours ${m} minutes`;
+                        return `${h}h ${m}m`;
                       })()
-                    : "-"}
-                </TableCell>
+                      : "-";
 
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={
-                      r.status === "on-time"
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                    }
-                  >
-                    {r.status}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </CardContent>
-  </Card>
-</div>
+                  return (
+                    <div
+                      key={r.id}
+                      className="rounded-lg border p-4 space-y-2"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{r.date}</span>
+                        <Badge
+                          variant="outline"
+                          className={
+                            r.status === "on-time"
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }
+                        >
+                          {r.status}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Check In</p>
+                          <p>{r.checkIn ?? "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Check Out</p>
+                          <p>{r.checkOut ?? "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Total</p>
+                          <p>{total}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP TABLE — YOUR EXISTING CODE */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Check In</TableHead>
+                      <TableHead>Check Out</TableHead>
+                      <TableHead>Total Hours</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {records.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="text-center py-6 text-muted-foreground"
+                        >
+                          No attendance records found
+                        </TableCell>
+                      </TableRow>
+                    )}
+
+                    {[...records].reverse().map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>{r.date}</TableCell>
+                        <TableCell>{r.checkIn ?? "-"}</TableCell>
+                        <TableCell>{r.checkOut ?? "-"}</TableCell>
+                        <TableCell>
+                          {r.totalHours != null
+                            ? (() => {
+                              const totalMinutes = Math.round(
+                                Number(r.totalHours) * 60
+                              );
+                              const h = Math.floor(totalMinutes / 60);
+                              const m = totalMinutes % 60;
+                              return `${h} hours ${m} minutes`;
+                            })()
+                            : "-"}
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              r.status === "on-time"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            }
+                          >
+                            {r.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
 
       </div>
