@@ -192,100 +192,83 @@ export default function EmployeeDailyOverview() {
 
             {/* ===== CARDS ===== */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {data.map((emp: any) => (
-                    <Card
-                        key={emp.userId}
-                        className="cursor-pointer hover:shadow-md transition"
-                        onClick={() => {
-                            setSelectedEmployee(emp);
-                            setIsOpen(true);
-                        }}
-                    >
-                        <CardHeader className="space-y-2">
-                            <CardTitle>{emp.userName}</CardTitle>
+                {data.map((emp: any) => {
+                    const cardColor =
+                        emp.pendingCount > 0
+                            ? "border-red-500 bg-white-50"
+                            : "border-white-500 bg-white-50";
 
-                            <p className="text-sm text-muted-foreground">
-                                {new Date(emp.date).toLocaleDateString()}
-                            </p>
+                    return (
+                        <Card
+                            key={emp.userId}
+                            className={`cursor-pointer hover:shadow-md transition border ${cardColor}`}
+                            onClick={() => {
+                                setSelectedEmployee(emp);
+                                setIsOpen(true);
+                            }}
+                        >
+                            <CardHeader className="space-y-2">
+                                <CardTitle>{emp.userName}</CardTitle>
 
-                            {emp.isHoliday ? (
-                                <span className="text-xs text-red-600 font-medium">
-                                    On Holiday
-                                </span>
-                            ) : (
-                                <div className="flex gap-4 text-sm">
-                                    <span className="text-green-600">
-                                        Approved: {emp.approvedCount}
+                                <p className="text-sm text-muted-foreground">
+                                    {new Date(emp.date).toLocaleDateString()}
+                                </p>
+
+                                {emp.isHoliday ? (
+                                    <span className="text-xs text-red-600 font-medium">
+                                        On Holiday
                                     </span>
-                                    <span className="text-yellow-600">
-                                        Pending: {emp.pendingCount}
-                                    </span>
-                                </div>
-                            )}
-                            {!emp.isHoliday && emp.totalEstimatedMinutes > 0 && (() => {
-                                const worked = getWorkedMinutes(emp);
-                                const percent = Math.min(
-                                    Math.round((worked / emp.totalEstimatedMinutes) * 100),
-                                    100
-                                );
-
-                                const summary = (() => {
-                                    const source = selectedUserId
-                                        ? data.filter((d: any) => d.userId === selectedUserId)
-                                        : data;
-
-                                    let tracked = 0;
-                                    let worked = 0;
-
-                                    source.forEach((emp: any) => {
-                                        if (emp.checkIn && emp.checkOut) {
-                                            const [inH, inM] = emp.checkIn.split(":").map(Number);
-                                            const [outH, outM] = emp.checkOut.split(":").map(Number);
-
-                                            const trackedMinutes = outH * 60 + outM - (inH * 60 + inM);
-                                            tracked += Math.max(trackedMinutes, 0);
-                                        }
-
-                                        worked +=
-                                            emp.tasks
-                                                ?.filter((t: any) => t.status === "approved")
-                                                .reduce((sum: number, t: any) => sum + (t.minutes || 0), 0) || 0;
-                                    });
-
-                                    return {
-                                        tracked,
-                                        worked,
-                                        difference: tracked - worked,
-                                        hasData: tracked > 0,
-                                    };
-                                })();
-
-
-                                return (
-                                    <div className="mt-2">
-                                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                                            <span>Progress</span>
-                                            <span>{percent}%</span>
-                                        </div>
-
-                                        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                                            <div
-                                                className={`h-full transition-all ${percent >= 100
-                                                    ? "bg-green-600"
-                                                    : percent >= 60
-                                                        ? "bg-yellow-500"
-                                                        : "bg-red-500"
-                                                    }`}
-                                                style={{ width: `${percent}%` }}
-                                            />
-                                        </div>
+                                ) : (
+                                    <div className="flex gap-4 text-sm">
+                                        <span className="text-green-600">
+                                            Approved: {emp.approvedCount}
+                                        </span>
+                                        <span
+                                            className={
+                                                emp.pendingCount > 0
+                                                    ? "text-red-600"
+                                                    : "text-yellow-600"
+                                            }
+                                        >
+                                            Pending: {emp.pendingCount}
+                                        </span>
                                     </div>
-                                );
-                            })()}
+                                )}
 
-                        </CardHeader>
-                    </Card>
-                ))}
+                                {!emp.isHoliday && emp.totalEstimatedMinutes > 0 && (() => {
+                                    const worked = getWorkedMinutes(emp);
+                                    const percent = Math.min(
+                                        Math.round((worked / emp.totalEstimatedMinutes) * 100),
+                                        100
+                                    );
+
+                                    return (
+                                        <div className="mt-2">
+                                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                                <span>Progress</span>
+                                                <span>{percent}%</span>
+                                            </div>
+
+                                            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all ${percent >= 100
+                                                            ? "bg-green-600"
+                                                            : percent >= 60
+                                                                ? "bg-yellow-500"
+                                                                : "bg-red-500"
+                                                        }`}
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </CardHeader>
+                        </Card>
+                    );
+                })}
+
+                
             </div>
 
             {/* ===== POPUP ===== */}

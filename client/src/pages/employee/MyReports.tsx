@@ -362,7 +362,7 @@ export default function MyReports() {
       {/* REPORT CARDS */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {Object.entries(
-          reports.reduce((acc: any, report: any) => {
+          reports.reduce<Record<string, any[]>>((acc, report: any) => {
             const dateKey = new Date(report.date).toLocaleDateString();
 
             acc[dateKey] = acc[dateKey] || [];
@@ -370,64 +370,73 @@ export default function MyReports() {
 
             return acc;
           }, {})
-        ).map(([date, dayReports]: any) => (
-          <Card
-            key={date}
-            onClick={() => {
-              setSelectedDate(date);
-              setSelectedReports(dayReports);
-              setIsViewOpen(true);
-            }}
-            className="cursor-pointer hover:shadow-md transition-shadow"
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">{date}</CardTitle>
-            </CardHeader>
+        ).map(([date, dayReports]) => {
+          const pendingCount = dayReports.filter(
+            (r: any) => r.status === "submitted"
+          ).length;
 
-            <CardContent className="space-y-2 text-sm">
-              <p className="text-muted-foreground">
-                {dayReports.length} reports
-              </p>
+          const approvedCount = dayReports.filter(
+            (r: any) => r.status === "approved"
+          ).length;
 
-              <div className="flex gap-4 text-xs">
-                <span className="text-green-600 font-medium">
-                  Approved:{" "}
-                  {
-                    dayReports.filter((r: any) => r.status === "approved").length
-                  }
-                </span>
+          return (
+            <Card
+              key={date}
+              onClick={() => {
+                setSelectedDate(date);
+                setSelectedReports(dayReports);
+                setIsViewOpen(true);
+              }}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">{date}</CardTitle>
+              </CardHeader>
 
-                <span className="text-yellow-600 font-medium">
-                  Pending:{" "}
-                  {
-                    dayReports.filter((r: any) => r.status === "submitted").length
-                  }
-                </span>
-              </div>
-            </CardContent>
+              <CardContent className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  {dayReports.length} reports
+                </p>
 
-          </Card>
+                <div className="flex gap-4 text-xs">
+                  <span className="text-green-600 font-medium">
+                    Approved: {approvedCount}
+                  </span>
 
-        ))}
+                  <span
+                    className={`font-medium ${pendingCount > 0
+                        ? "text-red-600"
+                        : "text-yellow-500"
+                      }`}
+                  >
+                    Pending: {pendingCount}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
 
+
+
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-<DialogContent
-  className="
-    w-[95vw] max-w-3xl
-    h-[90vh]
-    flex flex-col
-    p-0
-  "
->          <DialogHeader className="px-4 py-3 border-b">
-  <DialogTitle>
-    Reports – {selectedDate}
-  </DialogTitle>
-</DialogHeader>
+        <DialogContent
+          className="
+             w-[95vw] max-w-3xl
+             h-[90vh]
+             flex flex-col
+             p-0
+           "
+        >          <DialogHeader className="px-4 py-3 border-b">
+            <DialogTitle>
+              Reports – {selectedDate}
+            </DialogTitle>
+          </DialogHeader>
 
 
-<div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
             {/* MOBILE VIEW */}
             <div className="block md:hidden space-y-4">
               {selectedReports.map((report) => {
