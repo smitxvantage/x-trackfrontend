@@ -8,6 +8,10 @@ export const createEmployeeApi = (data: any) => {
   return api.post("/api/create", data);
 };
 
+export const updateEmployeeApi = (id: number, data: any) => {
+  return api.put(`/api/update/${id}`, data);
+};
+
 export const getSalaryApi = (year: number, month: number) => {
   return api.get(`/api/salary/calculate`, {
     params: { year, month },

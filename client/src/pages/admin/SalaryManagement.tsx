@@ -35,6 +35,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosResponse } from "axios";
 import { getUsersApi } from "@/api/users.api";
+import { updateEmployeeApi } from "@/api/salary.api";
+
 import { User } from "@/types";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -51,6 +53,10 @@ const SalaryManagement = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const now = new Date();
   const previousMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", salary: "" });
+
   const previousYear =
     now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
   const previousMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -112,6 +118,24 @@ const SalaryManagement = () => {
       });
     },
   });
+const updateEmployee = useMutation({
+  mutationFn: async (data: typeof editForm) => {
+    if (!editingEmployee) return;
+    const res = await updateEmployeeApi(editingEmployee.id as number, data);
+    return res.data;
+  },
+  onSuccess: () => {
+    toast({ title: "Employee Updated Successfully" });
+    queryClient.invalidateQueries({ queryKey: ["employees"] });
+    setIsEditOpen(false);
+  },
+  onError: () => {
+    toast({
+      title: "Failed to update employee",
+      variant: "destructive",
+    });
+  },
+});
 
   return (
     <div className="space-y-6">
@@ -176,6 +200,45 @@ const SalaryManagement = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+  <DialogContent className="sm:max-w-[500px]">
+    <DialogHeader>
+      <DialogTitle>Edit Employee</DialogTitle>
+    </DialogHeader>
+
+    <div className="grid gap-4 py-4">
+      <div className="space-y-2">
+        <Label>Name</Label>
+        <Input
+          value={editForm.name}
+          onChange={(e) =>
+            setEditForm((prev) => ({ ...prev, name: e.target.value }))
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Salary</Label>
+        <Input
+          value={editForm.salary}
+          onChange={(e) =>
+            setEditForm((prev) => ({ ...prev, salary: e.target.value }))
+          }
+        />
+      </div>
+    </div>
+
+    <DialogFooter>
+      <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+        Cancel
+      </Button>
+      <Button onClick={() => updateEmployee.mutate(editForm)}>
+        Update
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
       </div>
 
       <div className="rounded-md border bg-card">
@@ -183,16 +246,32 @@ const SalaryManagement = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Salary</TableHead>
+<TableHead>Salary</TableHead>
+<TableHead>Action</TableHead>
+
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {employees.map((emp) => (
-              <TableRow key={emp.id}>
-                <TableCell className="capitalize">{emp.name}</TableCell>
-                <TableCell>{emp.salary}</TableCell>
-              </TableRow>
+             <TableRow key={emp.id}>
+  <TableCell className="capitalize">{emp.name}</TableCell>
+  <TableCell>{emp.salary}</TableCell>
+  <TableCell>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        setEditingEmployee(emp);
+        setEditForm({ name: emp.name, salary: emp.salary });
+        setIsEditOpen(true);
+      }}
+    >
+      Edit
+    </Button>
+  </TableCell>
+</TableRow>
+
             ))}
 
             {employees.length === 0 && (

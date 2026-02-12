@@ -206,10 +206,10 @@ export default function MyReports() {
       await createReportApi({
         date: todayDate,
         hoursWorked: todayHours ?? 0, // ✅ fallback
+        description: blockers || null,  
         tasks: task,
         hoursSpent: totalEstimatedMinutes,
-        admin: admin,
-        blockers: blockers || null
+        admin: admin
       });
 
       toast({ title: "Report submitted successfully" });
@@ -340,12 +340,14 @@ export default function MyReports() {
 
               {/* BLOCKERS */}
               <div className="space-y-2">
-                <Label>Blockers (Optional)</Label>
-                <Input
-                  value={blockers}
-                  onChange={e => setBlockers(e.target.value)}
-                  placeholder="Any issues?"
-                />
+                <Label>Description </Label>
+                <Textarea
+                        value={blockers}
+                        onChange={e => setBlockers(e.target.value)}
+                        placeholder="About Task"
+                        rows={4}
+                      />
+
               </div>
             </div>
 

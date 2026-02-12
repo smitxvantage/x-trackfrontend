@@ -438,7 +438,7 @@ export default function EmployeeDashboard() {
 
           {hasActiveSession ? (
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-              {activeSession.isPaused ? (
+              {/* {activeSession.isPaused ? (
                 <Button onClick={handleResume} className="bg-white text-primary">
                   ▶ Resume
                 </Button>
@@ -446,7 +446,7 @@ export default function EmployeeDashboard() {
                 <Button onClick={handlePause} className="bg-white text-primary">
                   ⏸ Pause
                 </Button>
-              )}
+              )} */}
 
               <Button onClick={handleCheckOut} className="bg-white text-primary">
                 ⏹ Check Out

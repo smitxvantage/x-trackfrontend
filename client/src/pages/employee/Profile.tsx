@@ -183,7 +183,7 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-12">
+        {/* <Card className="md:col-span-12">
           <CardHeader>
             <CardTitle>Security</CardTitle>
             <CardDescription>Manage your password and security preferences.</CardDescription>
@@ -207,7 +207,7 @@ export default function Profile() {
               <Button variant="outline">Update Password</Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

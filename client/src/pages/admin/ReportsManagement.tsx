@@ -11,6 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Eye, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -20,23 +26,19 @@ import {
 } from "@/api/dailyReports.api";
 import { useToast } from "@/hooks/use-toast";
 
-const ADMIN_OPTIONS = [
-  "Vipul Sir",
-  "Mj Sir",
-  "Rahul Sir",
-  "Smit Sir",
-];
-
+const ADMIN_OPTIONS = ["Vipul Sir", "Mj Sir", "Rahul Sir", "Smit Sir"];
 
 export default function ReportsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
-  const [selectedAdmin, setSelectedAdmin] = useState<Record<number, string>>({});
+  const [selectedAdmin, setSelectedAdmin] = useState<Record<number, string>>(
+    {},
+  );
   const [selectedUser, setSelectedUser] = useState<number | "">("");
-
-
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewReport, setViewReport] = useState<any | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["daily-reports"],
@@ -54,7 +56,6 @@ export default function ReportsManagement() {
     },
   });
 
-
   const formatMinutesToHM = (minutes: number) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
@@ -71,53 +72,51 @@ export default function ReportsManagement() {
     },
   });
 
-
   const reports = (data || []).slice().sort((a: any, b: any) => {
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
   const filteredReports = reports.filter((r: any) => {
-    const matchesSearch =
-      (r.tasks || "").toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (r.tasks || "")
+      .toLowerCase()
+      .includes(search.toLowerCase());
 
-    const matchesUser =
-      selectedUser === "" || r.userId === selectedUser;
+    const matchesUser = selectedUser === "" || r.userId === selectedUser;
 
     return matchesSearch && matchesUser;
   });
 
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className='space-y-6'>
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h2 className='text-2xl sm:text-3xl font-bold tracking-tight'>
             Daily Reports
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className='text-muted-foreground mt-1'>
             Review daily work reports from employees.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border">
+      <div className='flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border'>
         <select
           value={selectedUser}
           onChange={(e) =>
             setSelectedUser(e.target.value ? Number(e.target.value) : "")
           }
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm
-                     focus:outline-none focus:ring-1 focus:ring-ring"
+          className='h-9 rounded-md border border-input bg-background px-3 text-sm
+                     focus:outline-none focus:ring-1 focus:ring-ring'
         >
-          <option value="">All Users</option>
+          <option value=''>All Users</option>
 
           {Array.from(
             new Map(
               reports.map((r: any) => [
                 r.userId,
                 r.userName || `User #${r.userId}`,
-              ])
-            ).entries()
+              ]),
+            ).entries(),
           ).map(([userId, displayName]) => (
             <option key={userId as number} value={userId as number}>
               {displayName as string}
@@ -125,28 +124,26 @@ export default function ReportsManagement() {
           ))}
         </select>
 
-
-
-        <div className="relative flex-1 w-full sm:max-w-sm">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <div className='relative flex-1 w-full sm:max-w-sm'>
+          <Search className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
           <Input
-            placeholder="Search by tasks..."
-            className="pl-9"
+            placeholder='Search by tasks...'
+            className='pl-9'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className='rounded-md border bg-card'>
         {/* MOBILE VIEW */}
-        <div className="block md:hidden">
+        <div className='block md:hidden'>
           {isLoading ? (
-            <div className="p-5 text-center text-muted-foreground">
+            <div className='p-5 text-center text-muted-foreground'>
               Loading reports...
             </div>
           ) : (
-            <div className="space-y-4 p-4">
+            <div className='space-y-4 p-4'>
               {filteredReports.map((report: any) => {
                 const date = new Date(report.date).toLocaleDateString();
                 const status = report.status;
@@ -154,16 +151,14 @@ export default function ReportsManagement() {
                 return (
                   <div
                     key={report.id}
-                    className="rounded-lg border p-4 space-y-3"
+                    className='rounded-lg border p-4 space-y-3'
                   >
-                    <div className="flex justify-between items-start">
+                    <div className='flex justify-between items-start'>
                       <div>
-                        <p className="font-medium">
+                        <p className='font-medium'>
                           {report.userName || `User #${report.userId}`}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {date}
-                        </p>
+                        <p className='text-sm text-muted-foreground'>{date}</p>
                       </div>
 
                       <Badge
@@ -179,15 +174,11 @@ export default function ReportsManagement() {
                       </Badge>
                     </div>
 
-                    <p className="text-sm">
-                      {report.tasks}
-                    </p>
+                    <p className='text-sm'>{report.tasks}</p>
 
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Hours</span>
-                      <span>
-                        {formatMinutesToHM(report.hoursSpent || 0)}
-                      </span>
+                    <div className='flex justify-between text-sm'>
+                      <span className='text-muted-foreground'>Hours</span>
+                      <span>{formatMinutesToHM(report.hoursSpent || 0)}</span>
                     </div>
 
                     {status !== "approved" && (
@@ -199,14 +190,14 @@ export default function ReportsManagement() {
                             [report.id]: e.target.value,
                           }))
                         }
-                        className="
+                        className='
                     h-9 w-full
                     rounded-md border border-input
                     bg-background px-3 text-sm
                     focus:outline-none focus:ring-1 focus:ring-ring
-                  "
+                  '
                       >
-                        <option value="">Select admin</option>
+                        <option value=''>Select admin</option>
                         {ADMIN_OPTIONS.map((name) => (
                           <option key={name} value={name}>
                             {name}
@@ -215,11 +206,11 @@ export default function ReportsManagement() {
                       </select>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className='flex gap-2'>
                       {status !== "approved" && (
                         <Button
-                          size="sm"
-                          className="flex-1"
+                          size='sm'
+                          className='flex-1'
                           onClick={() => {
                             const admin = selectedAdmin[report.id];
                             if (!admin) {
@@ -242,9 +233,9 @@ export default function ReportsManagement() {
 
                       {status !== "rejected" && (
                         <Button
-                          size="sm"
-                          variant="destructive"
-                          className="flex-1"
+                          size='sm'
+                          variant='destructive'
+                          className='flex-1'
                           onClick={() => rejectMutation.mutate(report.id)}
                         >
                           Reject
@@ -256,7 +247,7 @@ export default function ReportsManagement() {
               })}
 
               {filteredReports.length === 0 && (
-                <p className="text-center text-muted-foreground">
+                <p className='text-center text-muted-foreground'>
                   No reports found.
                 </p>
               )}
@@ -265,9 +256,9 @@ export default function ReportsManagement() {
         </div>
 
         {/* DESKTOP TABLE — YOUR EXISTING CODE */}
-        <div className="hidden md:block">
+        <div className='hidden md:block'>
           {isLoading ? (
-            <div className="p-5 text-center text-muted-foreground">
+            <div className='p-5 text-center text-muted-foreground'>
               Loading reports...
             </div>
           ) : (
@@ -276,11 +267,12 @@ export default function ReportsManagement() {
                 <TableRow>
                   <TableHead>Employee</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="w-[400px]">Tasks</TableHead>
+                  <TableHead className='w-[400px]'>Tasks</TableHead>
                   <TableHead>Hours</TableHead>
                   <TableHead>Admin</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>View</TableHead>
+                  <TableHead className='text-right'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -291,13 +283,13 @@ export default function ReportsManagement() {
 
                   return (
                     <TableRow key={report.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className='font-medium'>
                         {report.userName || `User #${report.userId}`}
                       </TableCell>
 
                       <TableCell>{date}</TableCell>
 
-                      <TableCell className="truncate max-w-[400px]">
+                      <TableCell className='truncate max-w-[400px]'>
                         {report.tasks}
                       </TableCell>
 
@@ -307,7 +299,7 @@ export default function ReportsManagement() {
 
                       <TableCell>
                         {status === "approved" ? (
-                          <span className="text-sm text-muted-foreground">
+                          <span className='text-sm text-muted-foreground'>
                             {report.admin || "-"}
                           </span>
                         ) : (
@@ -319,14 +311,14 @@ export default function ReportsManagement() {
                                 [report.id]: e.target.value,
                               }))
                             }
-                            className="
+                            className='
                         h-9 w-full min-w-[140px]
                         rounded-md border border-input
                         bg-background px-3 text-sm
                         focus:outline-none focus:ring-1 focus:ring-ring
-                      "
+                      '
                           >
-                            <option value="">Select admin</option>
+                            <option value=''>Select admin</option>
                             {ADMIN_OPTIONS.map((name) => (
                               <option key={name} value={name}>
                                 {name}
@@ -338,7 +330,7 @@ export default function ReportsManagement() {
 
                       <TableCell>
                         <Badge
-                          variant="outline"
+                          variant='outline'
                           className={
                             status === "approved"
                               ? "bg-green-50 text-green-700 border-green-200"
@@ -350,17 +342,28 @@ export default function ReportsManagement() {
                           {status}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          size='icon'
+                          variant='ghost'
+                          onClick={() => {
+                            setViewReport(report);
+                            setIsViewOpen(true);
+                          }}
+                        >
+                          <Eye className='h-4 w-4' />
+                        </Button>
+                      </TableCell>
 
-                      <TableCell className="text-right flex gap-2 justify-end">
+                      <TableCell className='text-right flex gap-2 justify-end'>
                         {status !== "approved" && (
                           <Button
-                            size="sm"
+                            size='sm'
                             onClick={() => {
                               const admin = selectedAdmin[report.id];
                               if (!admin) {
                                 toast({
-                                  title:
-                                    "Please select admin before approving",
+                                  title: "Please select admin before approving",
                                   variant: "destructive",
                                 });
                                 return;
@@ -378,11 +381,9 @@ export default function ReportsManagement() {
 
                         {status !== "rejected" && (
                           <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() =>
-                              rejectMutation.mutate(report.id)
-                            }
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => rejectMutation.mutate(report.id)}
                           >
                             Reject
                           </Button>
@@ -396,7 +397,70 @@ export default function ReportsManagement() {
           )}
         </div>
       </div>
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className='max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>Report Details</DialogTitle>
+          </DialogHeader>
 
+          {viewReport && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+
+              <div>
+                <strong>Employee:</strong>{" "}
+                {viewReport.userName || `User #${viewReport.userId}`}
+              </div>
+
+              <div>
+                <strong>Date:</strong>{" "}
+                {new Date(viewReport.date).toLocaleDateString()}
+              </div>
+
+              <div>
+                <strong>Status:</strong> {viewReport.status}
+              </div>
+
+              <div>
+                <strong>Tasks:</strong>
+                <p className='mt-1 whitespace-pre-wrap'>
+                  {viewReport.tasks || "-"}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                        <strong>Description:</strong>
+                        <p className="mt-1 whitespace-pre-wrap bg-muted p-3 rounded-md">
+                          {viewReport.description || "-"}
+                        </p>
+                      </div>
+
+
+              <div>
+                <strong>Hours Spent:</strong>{" "}
+                {formatMinutesToHM(viewReport.hoursSpent || 0)}
+              </div>
+
+              <div>
+                <strong>Admin:</strong> {viewReport.admin || "-"}
+              </div>
+
+              <div>
+                <strong>Submitted At:</strong>{" "}
+                {viewReport.submittedAt
+                  ? new Date(viewReport.submittedAt).toLocaleString()
+                  : "-"}
+              </div>
+
+              <div>
+                <strong>Approved At:</strong>{" "}
+                {viewReport.approvedAt
+                  ? new Date(viewReport.approvedAt).toLocaleString()
+                  : "-"}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
